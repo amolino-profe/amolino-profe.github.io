@@ -1,0 +1,166 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1"/>
+  <title>Pensamiento Computacional & Didáctica</title>
+  <style>
+    :root {
+      --primario: #00695c;
+      --secundario: #b2dfdb;
+      --fondo: #e0f2f1;
+      --texto: #333;
+    }
+    body {
+      margin:0;
+      font-family:'Segoe UI', sans-serif;
+      background:var(--fondo);
+      color:var(--texto);
+    }
+    header {
+      background:var(--primario);
+      color:white;
+      text-align:center;
+      padding:1.5rem 0;
+      box-shadow:0 2px 10px rgba(0,0,0,0.1);
+    }
+    nav {
+      background:white;
+      box-shadow:0 2px 6px rgba(0,0,0,0.1);
+      position:sticky;
+      top:0;
+      z-index:100;
+      display:flex;
+      justify-content:center;
+    }
+    nav a {
+      padding:1rem 1.5rem;
+      color:var(--texto);
+      text-decoration:none;
+      transition:.3s;
+      font-weight:500;
+    }
+    nav a:hover {
+      background:var(--primario);
+      color:white;
+    }
+    section {
+      padding:2rem 1rem;
+      max-width:1000px;
+      margin:auto;
+    }
+    h2 {
+      color:var(--primario);
+      border-bottom:3px solid var(--primario);
+      padding-bottom:.5rem;
+      margin-bottom:1rem;
+    }
+    .contenedor {
+      display:flex;
+      flex-wrap:wrap;
+      gap:1rem;
+      justify-content:center;
+    }
+    .tarjeta {
+      background:white;
+      border-radius:12px;
+      box-shadow:0 4px 10px rgba(0,0,0,0.1);
+      padding:1.5rem;
+      flex:1 1 240px;
+      transition:.3s;
+      cursor:pointer;
+    }
+    .tarjeta:hover {
+      background:var(--secundario);
+      transform:translateY(-4px);
+    }
+    .titulo {
+      font-size:1.2rem;
+      color:var(--primario);
+      margin-bottom:.5rem;
+      font-weight:bold;
+    }
+    img.resp {
+      max-width:100%;
+      border-radius:8px;
+      margin:1rem 0;
+    }
+    .referencia {
+      font-size:.9rem;
+      background:white;
+      padding:1rem;
+      border-left:5px solid var(--primario);
+      margin-top:1rem;
+    }
+    footer {
+      background:var(--secundario);
+      text-align:center;
+      padding:1rem;
+      font-size:.9rem;
+    }
+  </style>
+</head>
+<body>
+
+<header><h1>Pensamiento Computacional y Didáctica</h1></header>
+
+<nav>
+  <a href="#def">Definición</a>
+  <a href="#comp">Componentes</a>
+  <a href="#pc">Programación</a>
+  <a href="#did">Didáctica</a>
+</nav>
+
+<section id="def">
+  <h2>¿Qué es el Pensamiento Computacional?</h2>
+  <img class="resp" src="https://via.placeholder.com/800x200?text=Definici%C3%B3n+TC" alt="Ilustración definición TC">
+  <p>
+    Es un proceso lógico que utiliza la descomposición, abstracción, reconocimiento de patrones y algoritmos
+    para resolver problemas de forma estructurada y eficaz. No se limita a la programación, sino que
+    es aplicable en múltiples contextos reales.
+  </p>
+  <p>Fuente: <a href="https://aretio.hypotheses.org/9826" target="_blank">aretio.hypotheses.org</a></p>
+</section>
+
+<section id="comp">
+  <h2>Componentes del Pensamiento Computacional</h2>
+  <div class="contenedor">
+    <div class="tarjeta"><div class="titulo">Abstracción</div><div>Selección de lo relevante.</div></div>
+    <div class="tarjeta"><div class="titulo">Descomposición</div><div>Dividir el problema en partes.</div></div>
+    <div class="tarjeta"><div class="titulo">Patrones</div><div>Buscar similitudes y conexiones.</div></div>
+    <div class="tarjeta"><div class="titulo">Algoritmos</div><div>Secuencia lógica para la solución.</div></div>
+  </div>
+  <div class="referencia">
+    Basado en Dagienė, Sentance y Stupurienė (2017): 
+    <a href="https://www.bjmc.lu.lv/fileadmin/user_upload/lu_portal/projekti/bjmc/Contents/5_3_05_Dagiene.pdf" target="_blank">
+      Developing a Two‑Dimensional Categorization System for Educational Tasks in Informatics
+    </a>.
+  </div>
+</section>
+
+<section id="pc">
+  <h2>Vinculación con la Programación</h2>
+  <img class="resp" src="https://robowunderkind.com/blog/static/42c6e3c40c2e78d4cc1f4f7b7ed70834/2583b/teaching-coding.jpg" alt="Programación">
+  <img class="resp" src="https://robowunderkind.com/blog/static/38d3b4.jpg" alt="Coding abstract">
+  <p>
+    Herramientas como Scratch, robótica y proyectos de datos permiten aplicar de forma práctica
+    la descomposición, la abstracción y los algoritmos en contextos reales. Fuente: 
+    <a href="https://robowunderkind.com/blog/what-is-computational-thinking" target="_blank">robowunderkind.com</a>
+  </p>
+</section>
+
+<section id="did">
+  <h2>Vinculación con la Didáctica</h2>
+  <img class="resp" src="https://bsd.education/exploring-computational-thinking-in-the-classroom/static/581e9f4e2cf3.jpg" alt="Didáctica abstract">
+  <img class="resp" src="https://via.placeholder.com/800x200?text=Did%C3%A1ctica+TC" alt="Didáctica">
+  <p>
+    Actividades unplugged, proyectos colaborativos y utilización de tecnología educativa integran el
+    pensamiento computacional en cualquier asignatura. Fuente: 
+    <a href="https://bsd.education/exploring-computational-thinking-in-the-classroom/" target="_blank">bsd.education</a>
+  </p>
+</section>
+
+<footer>© 2025 – Pensamiento Computacional & Didáctica</footer>
+
+</body>
+</html>
