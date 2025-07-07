@@ -1,0 +1,182 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Parity Magic - Juego de Paridad</title>
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      background: #222;
+      color: white;
+      text-align: center;
+      padding: 20px;
+    }
+    table {
+      margin: 20px auto;
+      border-collapse: collapse;
+    }
+    td {
+      width: 40px;
+      height: 40px;
+      border: 1px solid #555;
+      cursor: pointer;
+    }
+    td.bit {
+      background: white;
+    }
+    td.bit.black {
+      background: black;
+    }
+    td.parity {
+      background: #444;
+    }
+    td.error {
+      border: 2px solid red;
+    }
+    button {
+      margin: 10px;
+      padding: 10px 15px;
+      font-size: 16px;
+      cursor: pointer;
+    }
+  </style>
+</head>
+<body>
+  <h1>🧠 Parity Magic - Juego de Paridad</h1>
+
+  <div>
+    <button onclick="generateGrid()">Generar</button>
+    <button onclick="enableParityEdit()">Permitir editar bits de paridad</button>
+    <button onclick="introduceError('user')">Otro jugador introduce error</button>
+    <button onclick="introduceError('machine')">Máquina introduce error</button>
+    <button onclick="checkParity()">Verificar Paridad</button>
+  </div>
+
+  <table id="grid"></table>
+
+  <p id="message"></p>
+
+  <script>
+    const gridSize = 5;
+    let grid = [];
+    let allowParityEdit = false;
+    let allowSingleEdit = false;
+
+    function generateGrid() {
+      const table = document.getElementById("grid");
+      table.innerHTML = "";
+      grid = [];
+      allowParityEdit = false;
+      allowSingleEdit = false;
+
+      for (let i = 0; i <= gridSize; i++) {
+        const row = [];
+        const tr = document.createElement("tr");
+
+        for (let j = 0; j <= gridSize; j++) {
+          const td = document.createElement("td");
+
+          if (i < gridSize && j < gridSize) {
+            const isBlack = Math.random() < 0.5;
+            td.className = "bit" + (isBlack ? " black" : "");
+            td.dataset.row = i;
+            td.dataset.col = j;
+          } else {
+            td.className = "parity";
+            td.dataset.row = i;
+            td.dataset.col = j;
+            td.onclick = () => {
+              if (allowParityEdit) flipParity(td);
+            };
+          }
+
+          tr.appendChild(td);
+          row.push(td);
+        }
+
+        table.appendChild(tr);
+        grid.push(row);
+      }
+
+      document.getElementById("message").textContent = "Carga los bits de paridad (haz clic sobre los cuadros gris).";
+    }
+
+    function flipParity(td) {
+      td.style.backgroundColor = td.style.backgroundColor === "black" ? "#444" : "black";
+    }
+
+    function flipBit(td) {
+      if (td.classList.contains("bit")) {
+        td.classList.toggle("black");
+      }
+    }
+
+    function enableParityEdit() {
+      allowParityEdit = true;
+      allowSingleEdit = false;
+      document.getElementById("message").textContent = "Edita los bits de paridad (fila y columna final). Luego introduce un error.";
+    }
+
+    function introduceError(mode) {
+      allowParityEdit = false;
+      allowSingleEdit = true;
+      document.querySelectorAll("td").forEach(td => td.onclick = null);
+
+      if (mode === "machine") {
+        const row = Math.floor(Math.random() * gridSize);
+        const col = Math.floor(Math.random() * gridSize);
+        flipBit(grid[row][col]);
+        document.getElementById("message").textContent = "La máquina ha alterado un bit. ¡Encuentra el error!";
+      } else {
+        document.getElementById("message").textContent = "Otro jugador debe cambiar solo un valor dentro del 5x5.";
+        for (let i = 0; i < gridSize; i++) {
+          for (let j = 0; j < gridSize; j++) {
+            grid[i][j].onclick = () => {
+              if (allowSingleEdit) {
+                flipBit(grid[i][j]);
+                allowSingleEdit = false;
+                document.getElementById("message").textContent = "¡Cambio realizado! Ahora presiona 'Verificar Paridad'.";
+              }
+            }
+          }
+        }
+      }
+    }
+
+    function checkParity() {
+      let errorRow = -1;
+      let errorCol = -1;
+
+      for (let i = 0; i < gridSize; i++) {
+        let blackCount = 0;
+        for (let j = 0; j < gridSize; j++) {
+          if (grid[i][j].classList.contains("black")) blackCount++;
+        }
+        const parityCell = grid[i][gridSize];
+        const parityColor = parityCell.style.backgroundColor;
+        const parityBit = parityColor === "black" ? 1 : 0;
+        if ((blackCount + parityBit) % 2 !== 0) errorRow = i;
+      }
+
+      for (let j = 0; j < gridSize; j++) {
+        let blackCount = 0;
+        for (let i = 0; i < gridSize; i++) {
+          if (grid[i][j].classList.contains("black")) blackCount++;
+        }
+        const parityCell = grid[gridSize][j];
+        const parityColor = parityCell.style.backgroundColor;
+        const parityBit = parityColor === "black" ? 1 : 0;
+        if ((blackCount + parityBit) % 2 !== 0) errorCol = j;
+      }
+
+      if (errorRow !== -1 && errorCol !== -1) {
+        grid[errorRow][errorCol].classList.add("error");
+        document.getElementById("message").textContent = `¡Error encontrado en fila ${errorRow + 1}, columna ${errorCol + 1}!`;
+      } else {
+        document.getElementById("message").textContent = "No se detectaron errores o hay múltiples errores.";
+      }
+    }
+  </script>
+</body>
+</html>
