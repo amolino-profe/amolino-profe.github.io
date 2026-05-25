@@ -1,0 +1,622 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Juego de Banderas — Tutorial</title>
+<link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;600;700&family=Syne:wght@400;600;700;800&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --bg: #0d0f14;
+    --surface: #13161e;
+    --surface2: #1a1e2a;
+    --border: #252a38;
+    --accent: #4fffb0;
+    --accent2: #ff6b6b;
+    --accent3: #ffd166;
+    --accent4: #74b9ff;
+    --text: #e8eaf0;
+    --muted: #6b7280;
+    --code-bg: #0a0c10;
+    --keyword: #ff79c6;
+    --func: #50fa7b;
+    --string: #f1fa8c;
+    --comment: #6272a4;
+    --var: #8be9fd;
+    --num: #bd93f9;
+  }
+
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+
+  body {
+    font-family: 'Syne', sans-serif;
+    background: var(--bg);
+    color: var(--text);
+    line-height: 1.7;
+    overflow-x: hidden;
+  }
+
+  /* ── HERO ── */
+  header {
+    position: relative;
+    padding: 80px 40px 60px;
+    max-width: 900px;
+    margin: 0 auto;
+    overflow: hidden;
+  }
+
+  header::before {
+    content: '';
+    position: absolute;
+    top: -120px; right: -200px;
+    width: 600px; height: 600px;
+    background: radial-gradient(circle, rgba(79,255,176,.12) 0%, transparent 70%);
+    pointer-events: none;
+  }
+
+  .badge {
+    display: inline-block;
+    background: rgba(79,255,176,.12);
+    border: 1px solid rgba(79,255,176,.3);
+    color: var(--accent);
+    font-family: 'JetBrains Mono', monospace;
+    font-size: .72rem;
+    letter-spacing: .1em;
+    padding: 4px 14px;
+    border-radius: 3px;
+    margin-bottom: 24px;
+  }
+
+  h1 {
+    font-size: clamp(2.4rem, 6vw, 4rem);
+    font-weight: 800;
+    line-height: 1.05;
+    letter-spacing: -.02em;
+    margin-bottom: 16px;
+  }
+
+  h1 span { color: var(--accent); }
+
+  .subtitle {
+    font-size: 1.1rem;
+    color: var(--muted);
+    max-width: 560px;
+  }
+
+  /* ── LAYOUT ── */
+  main {
+    max-width: 900px;
+    margin: 0 auto;
+    padding: 0 40px 100px;
+  }
+
+  /* ── SECTION ── */
+  section {
+    margin-bottom: 64px;
+    animation: fadeUp .5s ease both;
+  }
+
+  @keyframes fadeUp {
+    from { opacity: 0; transform: translateY(20px); }
+    to   { opacity: 1; transform: translateY(0); }
+  }
+
+  section:nth-child(2) { animation-delay: .05s; }
+  section:nth-child(3) { animation-delay: .1s; }
+  section:nth-child(4) { animation-delay: .15s; }
+  section:nth-child(5) { animation-delay: .2s; }
+  section:nth-child(6) { animation-delay: .25s; }
+
+  .section-label {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: .7rem;
+    letter-spacing: .15em;
+    color: var(--accent);
+    text-transform: uppercase;
+    margin-bottom: 10px;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+  }
+
+  .section-label::after {
+    content: '';
+    height: 1px;
+    width: 40px;
+    background: var(--accent);
+    opacity: .4;
+  }
+
+  h2 {
+    font-size: 1.7rem;
+    font-weight: 700;
+    margin-bottom: 18px;
+    letter-spacing: -.01em;
+  }
+
+  p { color: #c5c9d6; margin-bottom: 14px; font-size: 1rem; }
+
+  /* ── OBJECTIVE CARDS ── */
+  .cards {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+    gap: 16px;
+    margin-top: 20px;
+  }
+
+  .card {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    padding: 22px 20px;
+    position: relative;
+    overflow: hidden;
+    transition: border-color .2s, transform .2s;
+  }
+
+  .card:hover {
+    border-color: rgba(79,255,176,.35);
+    transform: translateY(-2px);
+  }
+
+  .card::before {
+    content: '';
+    position: absolute;
+    top: 0; left: 0; right: 0;
+    height: 2px;
+    background: var(--card-accent, var(--accent));
+  }
+
+  .card-icon {
+    font-size: 1.5rem;
+    margin-bottom: 10px;
+    display: block;
+  }
+
+  .card h3 {
+    font-size: .95rem;
+    font-weight: 700;
+    margin-bottom: 6px;
+    color: var(--text);
+  }
+
+  .card p {
+    font-size: .85rem;
+    color: var(--muted);
+    margin: 0;
+  }
+
+  /* ── CODE BLOCK ── */
+  .code-block {
+    background: var(--code-bg);
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    overflow: hidden;
+    margin: 20px 0;
+    font-family: 'JetBrains Mono', monospace;
+    font-size: .82rem;
+    line-height: 1.7;
+  }
+
+  .code-header {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 12px 18px;
+    background: var(--surface2);
+    border-bottom: 1px solid var(--border);
+  }
+
+  .dot { width: 10px; height: 10px; border-radius: 50%; }
+  .dot.r { background: #ff5f57; }
+  .dot.y { background: #febc2e; }
+  .dot.g { background: #28c840; }
+
+  .code-title {
+    margin-left: 6px;
+    font-size: .72rem;
+    color: var(--muted);
+    letter-spacing: .05em;
+  }
+
+  .code-body {
+    padding: 22px 24px;
+    overflow-x: auto;
+    white-space: pre;
+    tab-size: 2;
+  }
+
+  /* syntax colors */
+  .kw  { color: var(--keyword); }
+  .fn  { color: var(--func); }
+  .str { color: var(--string); }
+  .cm  { color: var(--comment); font-style: italic; }
+  .vr  { color: var(--var); }
+  .nm  { color: var(--num); }
+  .op  { color: #ff79c6; }
+  .pl  { color: #ffb86c; }  /* plain / object key */
+
+  /* ── API RESPONSE ── */
+  .api-box {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    padding: 24px;
+    margin: 20px 0;
+  }
+
+  .api-url {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: .83rem;
+    color: var(--accent4);
+    background: var(--code-bg);
+    border: 1px solid var(--border);
+    border-radius: 6px;
+    padding: 10px 16px;
+    display: inline-block;
+    margin-bottom: 20px;
+    word-break: break-all;
+  }
+
+  /* ── JSON TREE ── */
+  .json-tree {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: .8rem;
+    line-height: 1.8;
+  }
+
+  .json-key   { color: var(--accent4); }
+  .json-str   { color: var(--string); }
+  .json-punct { color: var(--muted); }
+
+  /* ── ACCESS TABLE ── */
+  .access-table {
+    width: 100%;
+    border-collapse: collapse;
+    font-family: 'JetBrains Mono', monospace;
+    font-size: .82rem;
+    margin-top: 20px;
+  }
+
+  .access-table th {
+    background: var(--surface2);
+    padding: 10px 16px;
+    text-align: left;
+    color: var(--accent);
+    font-weight: 600;
+    font-size: .72rem;
+    letter-spacing: .06em;
+    text-transform: uppercase;
+    border-bottom: 1px solid var(--border);
+  }
+
+  .access-table td {
+    padding: 10px 16px;
+    border-bottom: 1px solid var(--border);
+    color: var(--text);
+  }
+
+  .access-table tr:last-child td { border-bottom: none; }
+  .access-table tr:hover td { background: var(--surface2); }
+
+  .access-table td:first-child { color: var(--var); }
+  .access-table td:last-child  { color: var(--string); }
+  .arrow { color: var(--muted); margin: 0 8px; }
+
+  /* ── PENDING SECTION ── */
+  .pending-box {
+    background: var(--surface);
+    border: 1px solid rgba(255,107,107,.3);
+    border-radius: 10px;
+    padding: 28px 30px;
+    position: relative;
+    overflow: hidden;
+  }
+
+  .pending-box::before {
+    content: '';
+    position: absolute;
+    top: 0; left: 0; right: 0;
+    height: 2px;
+    background: linear-gradient(90deg, var(--accent2), var(--accent3));
+  }
+
+  .pending-box h3 {
+    font-size: 1.1rem;
+    font-weight: 700;
+    margin-bottom: 18px;
+    color: var(--accent2);
+    display: flex;
+    align-items: center;
+    gap: 10px;
+  }
+
+  .pending-list {
+    list-style: none;
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
+    gap: 10px;
+  }
+
+  .pending-list li {
+    display: flex;
+    align-items: flex-start;
+    gap: 10px;
+    font-size: .9rem;
+    color: #c5c9d6;
+    background: var(--surface2);
+    border: 1px solid var(--border);
+    border-radius: 7px;
+    padding: 10px 14px;
+  }
+
+  .pending-list li::before {
+    content: '○';
+    color: var(--accent3);
+    font-size: .85rem;
+    flex-shrink: 0;
+    margin-top: 2px;
+  }
+
+  .pending-note {
+    margin-top: 20px;
+    font-size: .88rem;
+    color: var(--muted);
+    font-style: italic;
+    border-left: 2px solid var(--accent3);
+    padding-left: 14px;
+  }
+
+  /* ── DIVIDER ── */
+  hr {
+    border: none;
+    border-top: 1px solid var(--border);
+    margin: 48px 0;
+  }
+
+  /* ── STEP COUNTER ── */
+  .step-num {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 28px; height: 28px;
+    background: rgba(79,255,176,.12);
+    border: 1px solid rgba(79,255,176,.3);
+    border-radius: 50%;
+    font-family: 'JetBrains Mono', monospace;
+    font-size: .8rem;
+    color: var(--accent);
+    flex-shrink: 0;
+    margin-right: 10px;
+  }
+
+  .step-row {
+    display: flex;
+    align-items: flex-start;
+    margin-bottom: 10px;
+  }
+
+  /* ── RESPONSIVE ── */
+  @media (max-width: 600px) {
+    header, main { padding-left: 20px; padding-right: 20px; }
+    h1 { font-size: 2rem; }
+    .cards { grid-template-columns: 1fr; }
+  }
+</style>
+</head>
+<body>
+
+<header>
+  <div class="badge">// Tutorial · HTML + CSS + JS + REST API</div>
+  <h1>Juego de<br><span>Banderas</span></h1>
+  <p class="subtitle">Cómo construir un juego de adivinar banderas usando la API de REST Countries y manipulación del DOM.</p>
+</header>
+
+<main>
+
+  <!-- OBJETIVO -->
+  <section>
+    <div class="section-label">01 — Objetivo</div>
+    <h2>¿Qué vamos a construir?</h2>
+    <p>Un juego donde se muestra una bandera aleatoria y el jugador debe elegir el nombre correcto entre cuatro opciones. Cada ronda la bandera y las opciones cambian. El jugador tiene vidas y acumula puntos.</p>
+
+    <div class="cards">
+      <div class="card" style="--card-accent: var(--accent)">
+        <span class="card-icon">🌐</span>
+        <h3>API REST</h3>
+        <p>Consumir datos reales desde <code style="color:var(--accent4)">restcountries.com</code> con <code style="color:var(--accent4)">fetch()</code>.</p>
+      </div>
+      <div class="card" style="--card-accent: var(--accent4)">
+        <span class="card-icon">🧩</span>
+        <h3>Manejo del DOM</h3>
+        <p>Crear y actualizar elementos HTML dinámicamente con JavaScript.</p>
+      </div>
+      <div class="card" style="--card-accent: var(--accent3)">
+        <span class="card-icon">⚡</span>
+        <h3>async / await</h3>
+        <p>Manejar promesas y operaciones asincrónicas de forma legible.</p>
+      </div>
+      <div class="card" style="--card-accent: var(--accent2)">
+        <span class="card-icon">🎮</span>
+        <h3>Lógica de juego</h3>
+        <p>Puntuación, vidas, validación de respuestas y flujo de pantallas.</p>
+      </div>
+    </div>
+  </section>
+
+  <!-- LA API -->
+  <section>
+    <div class="section-label">02 — La API</div>
+    <h2>REST Countries</h2>
+    <p>Vamos a usar la API pública de REST Countries. No requiere registro ni API key. El endpoint que nos interesa es el siguiente:</p>
+
+    <div class="api-box">
+      <div class="api-url">GET https://restcountries.com/v3.1/all?fields=name,flags</div>
+      <p style="font-size:.9rem; color:var(--muted); margin:0">Pedimos solo los campos <code style="color:var(--accent)">name</code> y <code style="color:var(--accent)">flags</code> para no traer datos innecesarios. Esto hace la respuesta mucho más liviana.</p>
+    </div>
+
+    <h2 style="font-size:1.2rem; margin-top:30px;">Formato de la respuesta</h2>
+    <p>Cada elemento del array que devuelve la API tiene esta estructura:</p>
+
+    <div class="code-block">
+      <div class="code-header">
+        <div class="dot r"></div><div class="dot y"></div><div class="dot g"></div>
+        <span class="code-title">respuesta JSON — un país</span>
+      </div>
+      <div class="code-body"><span class="json-punct">{</span>
+  <span class="json-key">"flags"</span><span class="json-punct">: {</span>
+    <span class="json-key">"png"</span><span class="json-punct">:</span>  <span class="json-str">"https://flagcdn.com/w320/uy.png"</span><span class="json-punct">,</span>
+    <span class="json-key">"svg"</span><span class="json-punct">:</span>  <span class="json-str">"https://flagcdn.com/uy.svg"</span><span class="json-punct">,</span>
+    <span class="json-key">"alt"</span><span class="json-punct">:</span>  <span class="json-str">"Descripción de la bandera..."</span>
+  <span class="json-punct">},</span>
+  <span class="json-key">"name"</span><span class="json-punct">: {</span>
+    <span class="json-key">"common"</span><span class="json-punct">:</span>    <span class="json-str">"Uruguay"</span><span class="json-punct">,</span>
+    <span class="json-key">"official"</span><span class="json-punct">:</span>  <span class="json-str">"Oriental Republic of Uruguay"</span><span class="json-punct">,</span>
+    <span class="json-key">"nativeName"</span><span class="json-punct">: {</span>
+      <span class="json-key">"spa"</span><span class="json-punct">: {</span>
+        <span class="json-key">"official"</span><span class="json-punct">:</span> <span class="json-str">"República Oriental del Uruguay"</span><span class="json-punct">,</span>
+        <span class="json-key">"common"</span><span class="json-punct">:</span>   <span class="json-str">"Uruguay"</span>
+      <span class="json-punct">}</span>
+    <span class="json-punct">}</span>
+  <span class="json-punct">}</span>
+<span class="json-punct">}</span></div>
+    </div>
+
+    <h2 style="font-size:1.2rem; margin-top:30px;">¿Cómo accedo a cada dato?</h2>
+    <p>Si tenemos un país guardado en la variable <code style="color:var(--var)">pais</code>, accedemos a sus propiedades con punto:</p>
+
+    <div style="background:var(--surface); border:1px solid var(--border); border-radius:10px; overflow:hidden; margin-top:16px;">
+      <table class="access-table">
+        <thead>
+          <tr><th>Expresión</th><th>→</th><th>Resultado</th></tr>
+        </thead>
+        <tbody>
+          <tr><td>pais.name.common</td><td class="arrow">→</td><td>"Uruguay"</td></tr>
+          <tr><td>pais.name.official</td><td class="arrow">→</td><td>"Oriental Republic of Uruguay"</td></tr>
+          <tr><td>pais.flags.png</td><td class="arrow">→</td><td>"https://flagcdn.com/w320/uy.png"</td></tr>
+          <tr><td>pais.flags.svg</td><td class="arrow">→</td><td>"https://flagcdn.com/uy.svg"</td></tr>
+          <tr><td>pais.flags.alt</td><td class="arrow">→</td><td>"The flag of Uruguay is..."</td></tr>
+        </tbody>
+      </table>
+    </div>
+  </section>
+
+  <!-- CARGAR PAÍSES -->
+  <section>
+    <div class="section-label">03 — JavaScript</div>
+    <h2>Función: cargarPaises()</h2>
+    <p>El primer paso es traer todos los países desde la API al arrancar el juego. Usamos <code style="color:var(--keyword)">async/await</code> para manejar la operación asincrónica de forma clara. Una vez que tenemos los datos, llamamos a la siguiente función que los usa.</p>
+
+    <div class="code-block">
+      <div class="code-header">
+        <div class="dot r"></div><div class="dot y"></div><div class="dot g"></div>
+        <span class="code-title">cargar paises función</span>
+      </div>
+      <div class="code-body"><span class="cm">// Variable global donde guardamos todos los países</span>
+<span class="kw">let</span> <span class="vr">paises</span> <span class="op">=</span> <span class="nm">[]</span><span class="op">;</span>
+<span class="kw">let</span> <span class="vr">paisCorrecto</span><span class="op">;</span>
+
+<span class="kw">async function</span> <span class="fn">cargarPaises</span><span class="op">() {</span>
+
+    <span class="kw">try</span> <span class="op">{</span>
+
+        <span class="cm">// fetch hace la petición a la API</span>
+        <span class="kw">const</span> <span class="vr">respuesta</span> <span class="op">=</span> <span class="kw">await</span> <span class="fn">fetch</span><span class="op">(</span><span class="str">"https://restcountries.com/v3.1/all?fields=name,flags"</span><span class="op">);</span>
+
+        <span class="cm">// Convertimos la respuesta a JSON</span>
+        <span class="kw">const</span> <span class="vr">datos</span> <span class="op">=</span> <span class="kw">await</span> <span class="vr">respuesta</span><span class="op">.</span><span class="fn">json</span><span class="op">();</span>
+
+        <span class="cm">// Guardamos los países en la variable global</span>
+        <span class="vr">paises</span> <span class="op">=</span> <span class="vr">datos</span><span class="op">;</span>
+
+        <span class="vr">console</span><span class="op">.</span><span class="fn">log</span><span class="op">(</span><span class="str">"Países cargados:"</span><span class="op">,</span> <span class="vr">paises</span><span class="op">.</span><span class="vr">length</span><span class="op">);</span>
+
+        <span class="cm">// Una vez cargados, mostramos la primera pregunta</span>
+        <span class="fn">mostrarPaisAleatorio</span><span class="op">();</span>
+
+    <span class="op">}</span> <span class="kw">catch</span> <span class="op">(</span><span class="vr">error</span><span class="op">) {</span>
+
+        <span class="vr">console</span><span class="op">.</span><span class="fn">log</span><span class="op">(</span><span class="str">"Error al cargar países:"</span><span class="op">,</span> <span class="vr">error</span><span class="op">);</span>
+
+    <span class="op">}</span>
+
+<span class="op">}</span></div>
+    </div>
+
+    <p>El <code style="color:var(--keyword)">try/catch</code> nos permite manejar errores de red o de la API sin romper la aplicación. Si algo falla, lo mostramos en consola.</p>
+  </section>
+
+  <!-- GENERAR OPCIONES -->
+  <section>
+    <div class="section-label">04 — Lógica del juego</div>
+    <h2>Función: generarOpciones()</h2>
+    <p>Cada pregunta necesita cuatro opciones: el país correcto y tres incorrectos elegidos al azar. Para evitar repeticiones usamos <code style="color:var(--func)">includes()</code> antes de agregar cada opción. Al final mezclamos el array para que la respuesta correcta no esté siempre en el mismo lugar.</p>
+
+    <div class="code-block">
+      <div class="code-header">
+        <div class="dot r"></div><div class="dot y"></div><div class="dot g"></div>
+        <span class="code-title">generar opciones</span>
+      </div>
+      <div class="code-body"><span class="kw">function</span> <span class="fn">generarOpciones</span><span class="op">() {</span>
+
+    <span class="cm">// Array donde guardaremos las opciones</span>
+    <span class="kw">let</span> <span class="vr">opciones</span> <span class="op">= [];</span>
+
+    <span class="cm">// Primero agregamos la respuesta correcta</span>
+    <span class="vr">opciones</span><span class="op">.</span><span class="fn">push</span><span class="op">(</span><span class="vr">paisCorrecto</span><span class="op">.</span><span class="vr">name</span><span class="op">.</span><span class="vr">common</span><span class="op">);</span>
+
+    <span class="cm">// Completamos con 3 países incorrectos al azar</span>
+    <span class="kw">while</span> <span class="op">(</span><span class="vr">opciones</span><span class="op">.</span><span class="vr">length</span> <span class="op">&lt;</span> <span class="nm">4</span><span class="op">) {</span>
+
+        <span class="kw">let</span> <span class="vr">random</span> <span class="op">=</span> <span class="vr">Math</span><span class="op">.</span><span class="fn">floor</span><span class="op">(</span><span class="vr">Math</span><span class="op">.</span><span class="fn">random</span><span class="op">() *</span> <span class="vr">paises</span><span class="op">.</span><span class="vr">length</span><span class="op">);</span>
+        <span class="kw">let</span> <span class="vr">nombrePais</span> <span class="op">=</span> <span class="vr">paises</span><span class="op">[</span><span class="vr">random</span><span class="op">].</span><span class="vr">name</span><span class="op">.</span><span class="vr">common</span><span class="op">;</span>
+
+        <span class="cm">// Evitar duplicados</span>
+        <span class="kw">if</span> <span class="op">(!</span><span class="vr">opciones</span><span class="op">.</span><span class="fn">includes</span><span class="op">(</span><span class="vr">nombrePais</span><span class="op">)) {</span>
+            <span class="vr">opciones</span><span class="op">.</span><span class="fn">push</span><span class="op">(</span><span class="vr">nombrePais</span><span class="op">);</span>
+        <span class="op">}</span>
+
+    <span class="op">}</span>
+
+    <span class="cm">// Mezclar para que la correcta no esté siempre en la misma posición</span>
+    <span class="vr">opciones</span><span class="op">.</span><span class="fn">sort</span><span class="op">(() =&gt;</span> <span class="vr">Math</span><span class="op">.</span><span class="fn">random</span><span class="op">() -</span> <span class="nm">0.5</span><span class="op">);</span>
+
+    <span class="cm">// → acá iría: mostrarBotones(opciones)</span>
+    <span class="kw">return</span> <span class="vr">opciones</span><span class="op">;</span>
+
+<span class="op">}</span></div>
+    </div>
+
+    <p>La función retorna el array ya mezclado. Los pasos siguientes, mostrar los botones en el HTML y manejar los clics, se cubren en las funciones pendientes.</p>
+  </section>
+
+  <hr>
+
+  <!-- PENDIENTES -->
+  <section>
+    <div class="section-label">05 — Trabajo pendiente</div>
+    <h2>Funciones por implementar</h2>
+    <p>Lo que vimos hasta acá es la base: traer los datos y preparar las opciones. Para tener un juego completo y funcional falta desarrollar el resto de la lógica:</p>
+
+    <div class="pending-box">
+      <h3>⚠ Funciones faltantes</h3>
+      <ul class="pending-list">
+        <li>mostrarBotones(opciones) — renderizar las 4 opciones como elementos del DOM</li>
+        <li>mostrarPaisAleatorio() — elegir un país al azar y mostrar su bandera en pantalla</li>
+        <li>verificarRespuesta(opcion) — comparar la opción elegida con la respuesta correcta</li>
+        <li>mostrarResultado(correcto) — feedback visual: verde/rojo según la respuesta</li>
+        <li>actualizarPuntaje() — sumar puntos cuando el jugador acierta</li>
+        <li>perderVida() — restar una vida y controlar si el juego termina</li>
+        <li>verificarGameOver() — detectar cuando las vidas llegan a cero</li>
+        <li>mostrarPantallaFinal() — mostrar el puntaje final y opción de reiniciar</li>
+        <li>reiniciarJuego() — resetear vidas, puntaje y empezar de nuevo</li>
+        <li>bloquearBotones() — evitar múltiples clicks durante la transición entre rondas</li>
+      </ul>
+      <p class="pending-note">Además del HTML y CSS base: el esqueleto visual del juego con el contenedor de la bandera, los botones, el marcador de puntaje y vidas, y las transiciones entre estados (jugando → resultado → siguiente ronda → game over).</p>
+    </div>
+  </section>
+
+</main>
+
+</body>
+</html>
