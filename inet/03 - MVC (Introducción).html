@@ -1,0 +1,787 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Guía MVC en PHP — Registro de Personas</title>
+<link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;600;700&family=Syne:wght@400;600;700;800&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --bg: #0f1117;
+    --surface: #161b27;
+    --surface2: #1e2535;
+    --border: #2a3349;
+    --accent: #4fffb0;
+    --accent2: #7b8fff;
+    --accent3: #ff7b7b;
+    --text: #e2e8f0;
+    --muted: #8896b0;
+    --code-bg: #0d1117;
+    --model-color: #4fffb0;
+    --view-color: #7b8fff;
+    --ctrl-color: #ffb347;
+  }
+
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+
+  body {
+    background: var(--bg);
+    color: var(--text);
+    font-family: 'Syne', sans-serif;
+    line-height: 1.6;
+    min-height: 100vh;
+  }
+
+  /* ── Header ── */
+  header {
+    background: linear-gradient(135deg, #0d1117 0%, #161b27 60%, #1a2035 100%);
+    border-bottom: 1px solid var(--border);
+    padding: 3rem 2rem 2.5rem;
+    position: relative;
+    overflow: hidden;
+  }
+  header::before {
+    content: '';
+    position: absolute;
+    top: -80px; right: -80px;
+    width: 320px; height: 320px;
+    background: radial-gradient(circle, rgba(79,255,176,0.08) 0%, transparent 70%);
+    pointer-events: none;
+  }
+  header::after {
+    content: '';
+    position: absolute;
+    bottom: -60px; left: 20%;
+    width: 260px; height: 260px;
+    background: radial-gradient(circle, rgba(123,143,255,0.07) 0%, transparent 70%);
+    pointer-events: none;
+  }
+  .header-inner {
+    max-width: 860px;
+    margin: 0 auto;
+    position: relative;
+    z-index: 1;
+  }
+  .badge {
+    display: inline-block;
+    background: rgba(79,255,176,0.1);
+    border: 1px solid rgba(79,255,176,0.3);
+    color: var(--accent);
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 0.7rem;
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+    padding: 0.25rem 0.75rem;
+    border-radius: 2px;
+    margin-bottom: 1rem;
+  }
+  h1 {
+    font-size: clamp(1.8rem, 4vw, 2.8rem);
+    font-weight: 800;
+    line-height: 1.15;
+    margin-bottom: 0.75rem;
+    letter-spacing: -0.02em;
+  }
+  h1 span { color: var(--accent); }
+  header p {
+    color: var(--muted);
+    font-size: 1rem;
+    max-width: 560px;
+  }
+
+  /* ── Layout ── */
+  main {
+    max-width: 860px;
+    margin: 0 auto;
+    padding: 2.5rem 2rem 4rem;
+  }
+
+  /* ── Section headings ── */
+  .section-label {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 0.68rem;
+    letter-spacing: 0.15em;
+    text-transform: uppercase;
+    color: var(--accent);
+    margin-bottom: 0.4rem;
+  }
+  h2 {
+    font-size: 1.45rem;
+    font-weight: 700;
+    margin-bottom: 1rem;
+    letter-spacing: -0.01em;
+  }
+  h3 {
+    font-size: 1.05rem;
+    font-weight: 700;
+    margin-bottom: 0.6rem;
+  }
+
+  section { margin-bottom: 3rem; }
+
+  p { color: var(--muted); margin-bottom: 0.8rem; font-size: 0.95rem; }
+  p strong { color: var(--text); }
+
+  /* ── MVC Table ── */
+  .mvc-table {
+    width: 100%;
+    border-collapse: collapse;
+    border-radius: 8px;
+    overflow: hidden;
+    font-size: 0.875rem;
+    margin-top: 1rem;
+  }
+  .mvc-table thead tr {
+    background: var(--surface2);
+  }
+  .mvc-table th {
+    text-align: left;
+    padding: 0.75rem 1rem;
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 0.72rem;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    color: var(--muted);
+    border-bottom: 1px solid var(--border);
+  }
+  .mvc-table td {
+    padding: 0.85rem 1rem;
+    border-bottom: 1px solid var(--border);
+    vertical-align: top;
+  }
+  .mvc-table tbody tr { background: var(--surface); }
+  .mvc-table tbody tr:last-child td { border-bottom: none; }
+  .mvc-table tbody tr:hover { background: var(--surface2); }
+  .pill {
+    display: inline-block;
+    font-weight: 700;
+    font-size: 0.8rem;
+    padding: 0.2rem 0.6rem;
+    border-radius: 3px;
+    white-space: nowrap;
+  }
+  .pill-model  { background: rgba(79,255,176,0.12); color: var(--model-color); }
+  .pill-view   { background: rgba(123,143,255,0.12); color: var(--view-color); }
+  .pill-ctrl   { background: rgba(255,179,71,0.12);  color: var(--ctrl-color); }
+
+  /* ── File structure ── */
+  .filetree {
+    background: var(--code-bg);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    padding: 1.25rem 1.5rem;
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 0.82rem;
+    line-height: 1.9;
+    color: var(--text);
+  }
+  .filetree .dir  { color: var(--accent2); }
+  .filetree .file { color: var(--muted); }
+  .filetree .file.highlight-model { color: var(--model-color); }
+  .filetree .file.highlight-view  { color: var(--view-color); }
+  .filetree .file.highlight-ctrl  { color: var(--ctrl-color); }
+  .filetree .file.highlight-conf  { color: #ff7b7b; }
+
+  /* ── Step cards ── */
+  .steps { display: flex; flex-direction: column; gap: 2rem; }
+
+  .step {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    overflow: hidden;
+    transition: border-color 0.2s;
+  }
+  .step:hover { border-color: var(--accent2); }
+
+  .step-header {
+    display: flex;
+    align-items: flex-start;
+    gap: 1rem;
+    padding: 1.25rem 1.5rem;
+    border-bottom: 1px solid var(--border);
+  }
+  .step-num {
+    flex-shrink: 0;
+    width: 2rem; height: 2rem;
+    border-radius: 50%;
+    display: flex; align-items: center; justify-content: center;
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 0.78rem;
+    font-weight: 700;
+  }
+  .step-num.c-accent  { background: rgba(79,255,176,0.15); color: var(--accent); border: 1px solid rgba(79,255,176,0.3); }
+  .step-num.c-accent2 { background: rgba(123,143,255,0.15); color: var(--accent2); border: 1px solid rgba(123,143,255,0.3); }
+  .step-num.c-ctrl    { background: rgba(255,179,71,0.15); color: var(--ctrl-color); border: 1px solid rgba(255,179,71,0.3); }
+  .step-num.c-view    { background: rgba(123,143,255,0.15); color: var(--view-color); border: 1px solid rgba(123,143,255,0.3); }
+  .step-num.c-red     { background: rgba(255,123,123,0.15); color: var(--accent3); border: 1px solid rgba(255,123,123,0.3); }
+
+  .step-title-block {}
+  .step-title-block .file-path {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 0.72rem;
+    color: var(--muted);
+    margin-bottom: 0.2rem;
+  }
+  .step-title-block h3 { margin: 0; font-size: 1rem; }
+
+  .step-body { padding: 1.25rem 1.5rem; }
+  .step-body p { margin-bottom: 1rem; }
+  .step-body p:last-child { margin-bottom: 0; }
+
+  /* ── Code blocks ── */
+  .code-wrap {
+    background: var(--code-bg);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    overflow: hidden;
+    margin: 1rem 0;
+    font-size: 0.82rem;
+  }
+  .code-bar {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    padding: 0.5rem 0.9rem;
+    background: var(--surface2);
+    border-bottom: 1px solid var(--border);
+  }
+  .code-bar .dot {
+    width: 10px; height: 10px;
+    border-radius: 50%;
+    flex-shrink: 0;
+  }
+  .dot-red    { background: #ff5f57; }
+  .dot-yellow { background: #febc2e; }
+  .dot-green  { background: #28c840; }
+  .code-bar .fname {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 0.7rem;
+    color: var(--muted);
+    margin-left: 0.4rem;
+  }
+  pre {
+    padding: 1.1rem 1.2rem;
+    overflow-x: auto;
+    line-height: 1.7;
+    font-family: 'JetBrains Mono', monospace;
+    color: var(--text);
+  }
+  /* syntax highlight */
+  .kw  { color: #ff7eb3; }       /* keywords */
+  .fn  { color: #7b8fff; }       /* functions/methods */
+  .str { color: #4fffb0; }       /* strings */
+  .cmt { color: #4a5568; font-style: italic; } /* comments */
+  .var { color: #e2b96f; }       /* variables */
+  .cls { color: #ff9e64; }       /* class names */
+  .tag { color: #f7768e; }       /* html tags */
+  .atr { color: #7dcfff; }       /* attributes */
+  .val { color: #9ece6a; }       /* attribute values */
+  .con { color: #bb9af7; }       /* constants */
+
+  /* ── Alert/note box ── */
+  .note {
+    display: flex;
+    gap: 0.75rem;
+    background: rgba(79,255,176,0.05);
+    border: 1px solid rgba(79,255,176,0.2);
+    border-left: 3px solid var(--accent);
+    border-radius: 6px;
+    padding: 0.9rem 1rem;
+    margin: 1rem 0;
+    font-size: 0.875rem;
+    color: var(--muted);
+    align-items: flex-start;
+  }
+  .note .note-icon { font-size: 1rem; flex-shrink: 0; margin-top: 0.05rem; }
+  .note p { margin: 0; color: var(--muted); }
+  .note strong { color: var(--accent); }
+
+  .warn {
+    border-color: rgba(255,179,71,0.2);
+    border-left-color: var(--ctrl-color);
+    background: rgba(255,179,71,0.04);
+  }
+  .warn strong { color: var(--ctrl-color); }
+
+  /* ── Flow diagram ── */
+  .flow {
+    display: flex;
+    align-items: center;
+    gap: 0;
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    padding: 1.25rem 1.5rem;
+    overflow-x: auto;
+    margin: 1rem 0;
+    flex-wrap: nowrap;
+  }
+  .flow-node {
+    flex-shrink: 0;
+    text-align: center;
+  }
+  .flow-box {
+    padding: 0.5rem 0.9rem;
+    border-radius: 6px;
+    font-size: 0.8rem;
+    font-weight: 700;
+    white-space: nowrap;
+  }
+  .flow-box.user   { background: rgba(226,232,240,0.08); border: 1px solid var(--border); }
+  .flow-box.ctrl   { background: rgba(255,179,71,0.12);  border: 1px solid rgba(255,179,71,0.3); color: var(--ctrl-color); }
+  .flow-box.model  { background: rgba(79,255,176,0.1);   border: 1px solid rgba(79,255,176,0.3); color: var(--model-color); }
+  .flow-box.db     { background: rgba(255,123,123,0.1);  border: 1px solid rgba(255,123,123,0.3); color: var(--accent3); }
+  .flow-box.view   { background: rgba(123,143,255,0.1);  border: 1px solid rgba(123,143,255,0.3); color: var(--view-color); }
+  .flow-sub {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 0.62rem;
+    color: var(--muted);
+    margin-top: 0.3rem;
+  }
+  .flow-arrow {
+    flex-shrink: 0;
+    padding: 0 0.5rem;
+    color: var(--muted);
+    font-size: 1.1rem;
+  }
+
+  /* ── Summary box ── */
+  .summary-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+    gap: 1rem;
+    margin-top: 1rem;
+  }
+  .summary-card {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    padding: 1rem;
+  }
+  .summary-card .sc-icon { font-size: 1.4rem; margin-bottom: 0.4rem; }
+  .summary-card h4 { font-size: 0.85rem; margin-bottom: 0.3rem; }
+  .summary-card p  { font-size: 0.78rem; margin: 0; }
+
+  /* ── Divider ── */
+  hr {
+    border: none;
+    border-top: 1px solid var(--border);
+    margin: 2rem 0;
+  }
+
+  /* scrollbar */
+  ::-webkit-scrollbar { width: 6px; height: 6px; }
+  ::-webkit-scrollbar-track { background: var(--bg); }
+  ::-webkit-scrollbar-thumb { background: var(--border); border-radius: 3px; }
+</style>
+</head>
+<body>
+
+<header>
+  <div class="header-inner">
+    <div class="badge">Guía Práctica · PHP + MySQL</div>
+    <h1>Patrón <span>MVC</span> en PHP<br>Registro de Personas</h1>
+    <p>Implementación paso a paso del patrón Modelo–Vista–Controlador aplicado a un formulario de registro con PDO y MySQL.</p>
+  </div>
+</header>
+
+<main>
+
+  <!-- 1. ¿Qué es MVC? -->
+  <section>
+    <div class="section-label">Concepto</div>
+    <h2>¿Qué es el patrón MVC?</h2>
+    <p>
+      <strong>MVC</strong> (Modelo–Vista–Controlador) es un patrón de arquitectura que separa una aplicación web en tres capas con responsabilidades bien definidas. Esto facilita el mantenimiento, la reutilización del código y la colaboración en equipo.
+    </p>
+
+    <table class="mvc-table">
+      <thead>
+        <tr>
+          <th>Componente</th>
+          <th>Descripción</th>
+          <th>Rol en PHP / MySQL</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td><span class="pill pill-model">Modelo</span></td>
+          <td>Maneja datos y lógica de negocio.</td>
+          <td>Conexión a MySQL, consultas CRUD.</td>
+        </tr>
+        <tr>
+          <td><span class="pill pill-view">Vista</span></td>
+          <td>Presenta la interfaz al usuario.</td>
+          <td>HTML/CSS para renderizar datos.</td>
+        </tr>
+        <tr>
+          <td><span class="pill pill-ctrl">Controlador</span></td>
+          <td>Procesa entradas y coordina flujo.</td>
+          <td>Enruta peticiones HTTP, actualiza modelo y selecciona vista.</td>
+        </tr>
+      </tbody>
+    </table>
+
+    <div class="flow">
+      <div class="flow-node">
+        <div class="flow-box user">Usuario</div>
+        <div class="flow-sub">form POST</div>
+      </div>
+      <div class="flow-arrow">→</div>
+      <div class="flow-node">
+        <div class="flow-box ctrl">Controlador</div>
+        <div class="flow-sub">registro.php</div>
+      </div>
+      <div class="flow-arrow">→</div>
+      <div class="flow-node">
+        <div class="flow-box model">Modelo</div>
+        <div class="flow-sub">Persona.php</div>
+      </div>
+      <div class="flow-arrow">→</div>
+      <div class="flow-node">
+        <div class="flow-box db">BD MySQL</div>
+        <div class="flow-sub">tabla personas</div>
+      </div>
+      <div class="flow-arrow">←</div>
+      <div class="flow-node">
+        <div class="flow-box view">Vista</div>
+        <div class="flow-sub">registro.view.php</div>
+      </div>
+    </div>
+  </section>
+
+  <!-- 2. Base de datos -->
+  <section>
+    <div class="section-label">Prerequisito</div>
+    <h2>Base de datos y tabla</h2>
+    <p>
+      Antes de comenzar, es necesario tener creada la base de datos <strong>registro</strong> y la tabla <strong>personas</strong>. Esto es parte del trabajo previo con MySQL, que se da por conocido o se cubre en material separado.
+    </p>
+    <div class="note warn">
+      <span class="note-icon">⚠️</span>
+      <p><strong>Recordatorio:</strong> la tabla <code>personas</code> debe tener al menos los campos <code>id</code> (INT, PK, AUTO_INCREMENT), <code>nombre</code> (VARCHAR), <code>email</code> (VARCHAR) y <code>password</code> (VARCHAR).</p>
+    </div>
+  </section>
+
+  <!-- 3. Estructura -->
+  <section>
+    <div class="section-label">Organización</div>
+    <h2>Estructura de archivos</h2>
+    <p>El proyecto vive en una carpeta <strong>registro/</strong> con la siguiente organización:</p>
+
+    <div class="filetree">
+      <span class="dir">registro/</span><br>
+      &nbsp;│<br>
+      &nbsp;├── <span class="dir">config/</span><br>
+      &nbsp;│&nbsp;&nbsp;&nbsp;└── <span class="file highlight-conf">database.php</span>&nbsp;&nbsp;&nbsp;<span style="color:#4a5568;font-style:italic;">← conexión PDO</span><br>
+      &nbsp;│<br>
+      &nbsp;├── <span class="dir">modelos/</span><br>
+      &nbsp;│&nbsp;&nbsp;&nbsp;└── <span class="file highlight-model">Persona.php</span>&nbsp;&nbsp;&nbsp;&nbsp;<span style="color:#4a5568;font-style:italic;">← Modelo</span><br>
+      &nbsp;│<br>
+      &nbsp;├── <span class="dir">controladores/</span><br>
+      &nbsp;│&nbsp;&nbsp;&nbsp;└── <span class="file highlight-ctrl">registro.php</span>&nbsp;&nbsp;&nbsp;<span style="color:#4a5568;font-style:italic;">← Controlador</span><br>
+      &nbsp;│<br>
+      &nbsp;├── <span class="dir">vistas/</span><br>
+      &nbsp;│&nbsp;&nbsp;&nbsp;└── <span class="file highlight-view">registro.view.php</span>&nbsp;<span style="color:#4a5568;font-style:italic;">← Vista</span><br>
+      &nbsp;│<br>
+      &nbsp;└── <span class="file">index.php</span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<span style="color:#4a5568;font-style:italic;">← punto de entrada</span>
+    </div>
+  </section>
+
+  <!-- 4. Pasos -->
+  <section>
+    <div class="section-label">Implementación</div>
+    <h2>Paso a paso</h2>
+
+    <div class="steps">
+
+      <!-- Paso 1: config/database.php -->
+      <div class="step">
+        <div class="step-header">
+          <div class="step-num c-red">01</div>
+          <div class="step-title-block">
+            <div class="file-path">config/</div>
+            <h3>Conexión a la base de datos — <code style="color:var(--accent3)">database.php</code></h3>
+          </div>
+        </div>
+        <div class="step-body">
+          <p>
+            Este archivo establece la conexión usando <strong>PDO</strong> (PHP Data Objects). PDO es la forma recomendada de conectarse a bases de datos en PHP porque permite usar <em>prepared statements</em> y es independiente del motor de base de datos.
+          </p>
+          <p>
+            El atributo <strong>ERRMODE_EXCEPTION</strong> hace que cualquier error de base de datos lance una excepción, facilitando la detección de problemas.
+          </p>
+
+          <div class="code-wrap">
+            <div class="code-bar">
+              <div class="dot dot-red"></div>
+              <div class="dot dot-yellow"></div>
+              <div class="dot dot-green"></div>
+              <span class="fname">config/database.php</span>
+            </div>
+            <pre><span class="kw">&lt;?php</span>
+
+<span class="var">$host</span>   = <span class="str">"localhost"</span>;
+<span class="var">$dbname</span> = <span class="str">"registro"</span>;
+<span class="var">$user</span>   = <span class="str">"root"</span>;
+<span class="var">$pass</span>   = <span class="str">""</span>;
+
+<span class="var">$conn</span> = <span class="kw">new</span> <span class="cls">PDO</span>(
+    <span class="str">"mysql:host=<span class="var">$host</span>;dbname=<span class="var">$dbname</span>;charset=utf8"</span>,
+    <span class="var">$user</span>,
+    <span class="var">$pass</span>
+);
+
+<span class="var">$conn</span>-&gt;<span class="fn">setAttribute</span>(
+    <span class="con">PDO::ATTR_ERRMODE</span>,
+    <span class="con">PDO::ERRMODE_EXCEPTION</span>
+);</pre>
+          </div>
+          <div class="note">
+            <span class="note-icon">💡</span>
+            <p><strong>Nota:</strong> <code>$pass = ""</code> es válido en entornos locales (XAMPP/LAMP). En producción siempre usar contraseña.</p>
+          </div>
+        </div>
+      </div>
+
+      <!-- Paso 2: Modelo -->
+      <div class="step">
+        <div class="step-header">
+          <div class="step-num c-accent">02</div>
+          <div class="step-title-block">
+            <div class="file-path">modelos/ &nbsp;·&nbsp; <span style="color:var(--model-color)">Modelo</span></div>
+            <h3>Clase Persona — <code style="color:var(--model-color)">Persona.php</code></h3>
+          </div>
+        </div>
+        <div class="step-body">
+          <p>
+            El <strong>Modelo</strong> encapsula toda la lógica relacionada con los datos. En este caso, la clase <code>Persona</code> recibe la conexión PDO y expone un método <code>guardar()</code> que inserta un registro en la base de datos.
+          </p>
+          <p>
+            Se usa un <strong>prepared statement</strong> con <code>?</code> como marcadores de posición. Esto protege contra inyecciones SQL. La contraseña se almacena hasheada con <code>password_hash()</code>, nunca en texto plano.
+          </p>
+
+          <div class="code-wrap">
+            <div class="code-bar">
+              <div class="dot dot-red"></div>
+              <div class="dot dot-yellow"></div>
+              <div class="dot dot-green"></div>
+              <span class="fname">modelos/Persona.php</span>
+            </div>
+            <pre><span class="kw">&lt;?php</span>
+
+<span class="kw">class</span> <span class="cls">Persona</span> {
+
+    <span class="kw">private</span> <span class="var">$conn</span>;
+
+    <span class="kw">public function</span> <span class="fn">__construct</span>(<span class="var">$conexion</span>) {
+        <span class="var">$this</span>-&gt;<span class="var">conn</span> = <span class="var">$conexion</span>;
+    }
+
+    <span class="kw">public function</span> <span class="fn">guardar</span>(<span class="var">$nombre</span>, <span class="var">$email</span>, <span class="var">$password</span>) {
+
+        <span class="var">$sql</span> = <span class="str">"INSERT INTO personas
+                (nombre, email, password)
+                VALUES (?, ?, ?)"</span>;
+
+        <span class="var">$stmt</span> = <span class="var">$this</span>-&gt;<span class="var">conn</span>-&gt;<span class="fn">prepare</span>(<span class="var">$sql</span>);
+
+        <span class="kw">return</span> <span class="var">$stmt</span>-&gt;<span class="fn">execute</span>([
+            <span class="var">$nombre</span>,
+            <span class="var">$email</span>,
+            <span class="fn">password_hash</span>(<span class="var">$password</span>, <span class="con">PASSWORD_DEFAULT</span>)
+        ]);
+    }
+}</pre>
+          </div>
+          <div class="note">
+            <span class="note-icon">🔒</span>
+            <p><strong><code>password_hash()</code></strong> aplica un algoritmo seguro (bcrypt por defecto). Nunca guardar contraseñas en texto plano.</p>
+          </div>
+        </div>
+      </div>
+
+      <!-- Paso 3: Controlador -->
+      <div class="step">
+        <div class="step-header">
+          <div class="step-num c-ctrl">03</div>
+          <div class="step-title-block">
+            <div class="file-path">controladores/ &nbsp;·&nbsp; <span style="color:var(--ctrl-color)">Controlador</span></div>
+            <h3>Lógica de registro — <code style="color:var(--ctrl-color)">registro.php</code></h3>
+          </div>
+        </div>
+        <div class="step-body">
+          <p>
+            El <strong>Controlador</strong> es el intermediario: recibe los datos del formulario, los pasa al Modelo y decide qué mostrar. Incluye la conexión y el modelo con <code>require_once</code>. Al final, carga la Vista.
+          </p>
+          <p>
+            La verificación <code>$_SERVER["REQUEST_METHOD"] == "POST"</code> asegura que el procesamiento solo ocurra cuando el formulario fue enviado, no en una visita directa.
+          </p>
+
+          <div class="code-wrap">
+            <div class="code-bar">
+              <div class="dot dot-red"></div>
+              <div class="dot dot-yellow"></div>
+              <div class="dot dot-green"></div>
+              <span class="fname">controladores/registro.php</span>
+            </div>
+            <pre><span class="kw">&lt;?php</span>
+
+<span class="fn">require_once</span> <span class="str">"../config/database.php"</span>;
+<span class="fn">require_once</span> <span class="str">"../modelos/Persona.php"</span>;
+
+<span class="var">$mensaje</span> = <span class="str">""</span>;
+
+<span class="kw">if</span> (<span class="var">$_SERVER</span>[<span class="str">"REQUEST_METHOD"</span>] == <span class="str">"POST"</span>) {
+
+    <span class="var">$nombre</span>   = <span class="var">$_POST</span>[<span class="str">"nombre"</span>];
+    <span class="var">$email</span>    = <span class="var">$_POST</span>[<span class="str">"email"</span>];
+    <span class="var">$password</span> = <span class="var">$_POST</span>[<span class="str">"password"</span>];
+
+    <span class="var">$persona</span> = <span class="kw">new</span> <span class="cls">Persona</span>(<span class="var">$conn</span>);
+
+    <span class="var">$ok</span> = <span class="var">$persona</span>-&gt;<span class="fn">guardar</span>(
+        <span class="var">$nombre</span>,
+        <span class="var">$email</span>,
+        <span class="var">$password</span>
+    );
+
+    <span class="kw">if</span> (<span class="var">$ok</span>) {
+        <span class="var">$mensaje</span> = <span class="str">"Usuario registrado correctamente"</span>;
+    } <span class="kw">else</span> {
+        <span class="var">$mensaje</span> = <span class="str">"Error al registrar"</span>;
+    }
+}
+
+<span class="fn">require_once</span> <span class="str">"../vistas/registro.view.php"</span>;</pre>
+          </div>
+        </div>
+      </div>
+
+      <!-- Paso 4: Vista -->
+      <div class="step">
+        <div class="step-header">
+          <div class="step-num c-view">04</div>
+          <div class="step-title-block">
+            <div class="file-path">vistas/ &nbsp;·&nbsp; <span style="color:var(--view-color)">Vista</span></div>
+            <h3>Formulario HTML — <code style="color:var(--view-color)">registro.view.php</code></h3>
+          </div>
+        </div>
+        <div class="step-body">
+          <p>
+            La <strong>Vista</strong> es HTML puro con una pequeña inserción PHP para mostrar el mensaje de resultado. No contiene lógica de negocio; solo presenta datos.
+          </p>
+          <p>
+            El formulario usa <code>method="POST"</code> sin <code>action</code>, lo que envía los datos al mismo controlador que cargó la vista. La variable <code>$mensaje</code> viene definida por el Controlador.
+          </p>
+
+          <div class="code-wrap">
+            <div class="code-bar">
+              <div class="dot dot-red"></div>
+              <div class="dot dot-yellow"></div>
+              <div class="dot dot-green"></div>
+              <span class="fname">vistas/registro.view.php</span>
+            </div>
+            <pre><span class="tag">&lt;!DOCTYPE html&gt;</span>
+<span class="tag">&lt;html&gt;</span>
+<span class="tag">&lt;head&gt;</span>
+    <span class="tag">&lt;title&gt;</span>Registro<span class="tag">&lt;/title&gt;</span>
+<span class="tag">&lt;/head&gt;</span>
+<span class="tag">&lt;body&gt;</span>
+
+<span class="tag">&lt;form</span> <span class="atr">method</span>=<span class="val">"POST"</span><span class="tag">&gt;</span>
+
+    <span class="tag">&lt;label&gt;</span>Nombre<span class="tag">&lt;/label&gt;&lt;br&gt;</span>
+    <span class="tag">&lt;input</span> <span class="atr">type</span>=<span class="val">"text"</span> <span class="atr">name</span>=<span class="val">"nombre"</span> <span class="atr">required</span><span class="tag">&gt;</span>
+    <span class="tag">&lt;br&gt;&lt;br&gt;</span>
+
+    <span class="tag">&lt;label&gt;</span>Email<span class="tag">&lt;/label&gt;&lt;br&gt;</span>
+    <span class="tag">&lt;input</span> <span class="atr">type</span>=<span class="val">"email"</span> <span class="atr">name</span>=<span class="val">"email"</span> <span class="atr">required</span><span class="tag">&gt;</span>
+    <span class="tag">&lt;br&gt;&lt;br&gt;</span>
+
+    <span class="tag">&lt;label&gt;</span>Password<span class="tag">&lt;/label&gt;&lt;br&gt;</span>
+    <span class="tag">&lt;input</span> <span class="atr">type</span>=<span class="val">"password"</span> <span class="atr">name</span>=<span class="val">"password"</span> <span class="atr">required</span><span class="tag">&gt;</span>
+    <span class="tag">&lt;br&gt;&lt;br&gt;</span>
+
+    <span class="tag">&lt;button</span> <span class="atr">type</span>=<span class="val">"submit"</span><span class="tag">&gt;</span>Registrarse<span class="tag">&lt;/button&gt;</span>
+
+<span class="tag">&lt;/form&gt;</span>
+
+<span class="tag">&lt;p&gt;</span><span class="kw">&lt;?=</span> <span class="var">$mensaje</span> <span class="kw">?&gt;</span><span class="tag">&lt;/p&gt;</span>
+
+<span class="tag">&lt;/body&gt;</span>
+<span class="tag">&lt;/html&gt;</span></pre>
+          </div>
+        </div>
+      </div>
+
+      <!-- Paso 5: index.php -->
+      <div class="step">
+        <div class="step-header">
+          <div class="step-num c-accent2">05</div>
+          <div class="step-title-block">
+            <div class="file-path">raíz del proyecto</div>
+            <h3>Punto de entrada — <code style="color:var(--accent2)">index.php</code></h3>
+          </div>
+        </div>
+        <div class="step-body">
+          <p>
+            El archivo <code>index.php</code> en la raíz actúa como punto de entrada único. Su función es simplemente delegar al controlador correspondiente. En proyectos más grandes aquí viviría el enrutador (<em>router</em>).
+          </p>
+
+          <div class="code-wrap">
+            <div class="code-bar">
+              <div class="dot dot-red"></div>
+              <div class="dot dot-yellow"></div>
+              <div class="dot dot-green"></div>
+              <span class="fname">index.php</span>
+            </div>
+            <pre><span class="kw">&lt;?php</span>
+
+<span class="fn">require_once</span> <span class="str">"controladores/registro.php"</span>;</pre>
+          </div>
+          <div class="note">
+            <span class="note-icon">🌐</span>
+            <p>Al acceder a <strong>http://localhost/registro/</strong> el servidor sirve <code>index.php</code> automáticamente, que carga el controlador, que a su vez carga la vista.</p>
+          </div>
+        </div>
+      </div>
+
+    </div><!-- /steps -->
+  </section>
+
+  <!-- 5. Resumen -->
+  <section>
+    <div class="section-label">Resumen</div>
+    <h2>¿Qué hicimos?</h2>
+    <p>Al separar responsabilidades en tres capas, el código es más fácil de modificar y extender. Agregar un nuevo campo al formulario solo requiere tocar cada capa en su lugar correspondiente.</p>
+
+    <div class="summary-grid">
+      <div class="summary-card">
+        <div class="sc-icon">⚙️</div>
+        <h4 style="color:var(--accent3)">Config</h4>
+        <p>Conexión PDO reutilizable. Si cambia el servidor, solo se edita aquí.</p>
+      </div>
+      <div class="summary-card">
+        <div class="sc-icon">🗄️</div>
+        <h4 style="color:var(--model-color)">Modelo</h4>
+        <p>Encapsula la consulta SQL y el hash de contraseña. La lógica de datos en un solo lugar.</p>
+      </div>
+      <div class="summary-card">
+        <div class="sc-icon">🔀</div>
+        <h4 style="color:var(--ctrl-color)">Controlador</h4>
+        <p>Coordina el flujo: recibe POST, usa el modelo, pasa resultado a la vista.</p>
+      </div>
+      <div class="summary-card">
+        <div class="sc-icon">🖥️</div>
+        <h4 style="color:var(--view-color)">Vista</h4>
+        <p>Solo HTML. No sabe nada de la base de datos; solo muestra lo que el controlador le pasa.</p>
+      </div>
+    </div>
+  </section>
+
+</main>
+
+</body>
+</html>
