@@ -1,0 +1,907 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Cifrado de César — Lab. Programación II</title>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Cinzel:wght@400;700;900&family=Source+Code+Pro:wght@300;400;600&display=swap');
+
+  :root {
+    --bg: #0d0d0f;
+    --surface: #141418;
+    --surface2: #1c1c23;
+    --border: #2a2a35;
+    --gold: #0d65a0;
+    --gold-dim: #6e8beb;
+    --red: #c94c4c;
+    --green: #4cc97a;
+    --blue: #4c8bc9;
+    --amber: #EF9F27;
+    --text: #e8e4d8;
+    --text-dim: #8a8578;
+    --mono: 'Source Code Pro', monospace;
+    --serif: 'Cinzel', serif;
+  }
+
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+
+  body {
+    background: var(--bg);
+    color: var(--text);
+    font-family: var(--mono);
+    font-size: 14px;
+    line-height: 1.6;
+    min-height: 100vh;
+  }
+
+  /* ── HEADER ── */
+  .header {
+    background: linear-gradient(180deg, #1a1508 0%, var(--bg) 100%);
+    border-bottom: 1px solid var(--gold-dim);
+    padding: 28px 40px 20px;
+    position: relative;
+    overflow: hidden;
+  }
+  .header::before {
+    content: 'SPQR';
+    position: absolute;
+    right: 40px; top: 50%;
+    transform: translateY(-50%);
+    font-family: var(--serif);
+    font-size: 64px;
+    color: var(--gold-dim);
+    opacity: 0.18;
+    letter-spacing: 12px;
+  }
+  .header h1 {
+    font-family: var(--serif);
+    font-size: 28px;
+    color: var(--gold);
+    letter-spacing: 4px;
+    text-transform: uppercase;
+  }
+  .header .subtitle {
+    color: var(--text-dim);
+    font-size: 11px;
+    letter-spacing: 3px;
+    margin-top: 4px;
+  }
+  .badge {
+    display: inline-block;
+    background: var(--gold-dim);
+    color: var(--gold);
+    font-size: 10px;
+    letter-spacing: 2px;
+    padding: 2px 8px;
+    margin-top: 8px;
+    border: 1px solid var(--gold-dim);
+  }
+
+  /* ── TABS ── */
+  .tabs {
+    display: flex;
+    border-bottom: 1px solid var(--border);
+    background: var(--surface);
+    padding: 0 40px;
+    overflow-x: auto;
+  }
+  .tab {
+    padding: 12px 20px;
+    cursor: pointer;
+    color: var(--text-dim);
+    font-size: 11px;
+    letter-spacing: 2px;
+    text-transform: uppercase;
+    border-bottom: 2px solid transparent;
+    transition: all 0.2s;
+    white-space: nowrap;
+    user-select: none;
+  }
+  .tab:hover { color: var(--text); }
+  .tab.active { color: var(--gold); border-bottom-color: var(--gold); }
+
+  /* ── CONTENT ── */
+  .content { display: none; padding: 32px 40px; max-width: 900px; }
+  .content.active { display: block; }
+
+  /* ── SECTIONS ── */
+  .section {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-left: 3px solid var(--gold-dim);
+    padding: 20px 24px;
+    margin-bottom: 20px;
+    border-radius: 0 4px 4px 0;
+  }
+  .section h2 {
+    font-family: var(--serif);
+    font-size: 13px;
+    color: var(--gold);
+    letter-spacing: 3px;
+    margin-bottom: 12px;
+    text-transform: uppercase;
+  }
+  .section p {
+    color: var(--text-dim);
+    font-size: 13px;
+    line-height: 1.8;
+    margin-bottom: 8px;
+  }
+  .section p:last-child { margin-bottom: 0; }
+  .highlight { color: var(--gold); font-weight: 600; }
+
+  /* ── ALPHABET VISUAL ── */
+  .alphabet-grid {
+    display: grid;
+    grid-template-columns: repeat(13, 1fr);
+    gap: 4px;
+    margin-top: 12px;
+  }
+  .alpha-cell {
+    background: var(--surface2);
+    border: 1px solid var(--border);
+    text-align: center;
+    padding: 6px 4px;
+    border-radius: 2px;
+  }
+  .alpha-cell .letter { display: block; font-family: var(--serif); font-size: 14px; color: var(--gold); }
+  .alpha-cell .num { display: block; font-size: 9px; color: var(--text-dim); margin-top: 2px; }
+
+  /* ── CONCEPTS ── */
+  .concept-list { list-style: none; margin-top: 8px; }
+  .concept-list li {
+    color: var(--text-dim);
+    font-size: 13px;
+    padding: 6px 0;
+    border-bottom: 1px solid var(--border);
+    display: flex;
+    align-items: baseline;
+    gap: 10px;
+  }
+  .concept-list li:last-child { border-bottom: none; }
+  .concept-list li::before { content: '▸'; color: var(--gold-dim); flex-shrink: 0; }
+  .concept-list li code {
+    background: var(--surface2);
+    color: var(--blue);
+    padding: 1px 6px;
+    border-radius: 2px;
+    font-size: 11px;
+  }
+
+  .extras-list { list-style: none; margin-top: 8px; }
+  .extras-list li {
+    color: var(--text-dim);
+    font-size: 13px;
+    padding: 5px 0 5px 18px;
+    position: relative;
+  }
+  .extras-list li::before { content: '○'; color: var(--gold-dim); position: absolute; left: 0; font-size: 10px; top: 7px; }
+  .extras-list li.sub { padding-left: 36px; }
+  .extras-list li.sub::before { content: '–'; font-size: 13px; top: 5px; }
+
+  /* ── EXAMPLE BOX ── */
+  .example-box {
+    background: var(--surface2);
+    border: 1px solid var(--border);
+    padding: 14px 18px;
+    margin-top: 12px;
+    border-radius: 4px;
+    font-size: 13px;
+  }
+  .example-box .row { display: flex; gap: 12px; align-items: center; padding: 4px 0; }
+  .example-box .label { color: var(--text-dim); width: 110px; flex-shrink: 0; font-size: 11px; letter-spacing: 1px; }
+  .example-box .val { color: var(--text); font-weight: 600; }
+  .example-box .val.enc { color: var(--green); }
+  .example-box .sep { border-top: 1px solid var(--border); margin: 6px 0; }
+
+  /* ── TERMINAL ── */
+  .terminal {
+    background: #080810;
+    border: 1px solid var(--border);
+    border-radius: 4px;
+    padding: 20px 24px;
+    margin-top: 12px;
+    font-size: 13px;
+    line-height: 2;
+  }
+  .terminal .t-gold { color: var(--gold); }
+  .terminal .t-green { color: var(--green); }
+  .terminal .t-dim { color: var(--text-dim); }
+  .terminal .t-blue { color: var(--blue); }
+  .terminal .t-red { color: var(--red); }
+  .terminal .prompt::before { content: '> '; color: var(--green); }
+
+  /* ── CIFRADOR ── */
+  .cifrador {
+    background: var(--surface2);
+    border: 1px solid var(--border);
+    border-radius: 4px;
+    padding: 24px;
+    margin-bottom: 20px;
+  }
+  .cifrador h2 {
+    font-family: var(--serif);
+    font-size: 14px;
+    color: var(--gold);
+    letter-spacing: 3px;
+    margin-bottom: 20px;
+    padding-bottom: 10px;
+    border-bottom: 1px solid var(--border);
+  }
+  .field-group { margin-bottom: 16px; }
+  .field-label {
+    display: block;
+    font-size: 10px;
+    letter-spacing: 2px;
+    color: var(--text-dim);
+    text-transform: uppercase;
+    margin-bottom: 6px;
+  }
+  .field-input {
+    width: 100%;
+    background: var(--surface);
+    border: 1px solid var(--border);
+    color: var(--text);
+    font-family: var(--mono);
+    font-size: 14px;
+    padding: 10px 14px;
+    border-radius: 2px;
+    outline: none;
+    transition: border-color 0.2s;
+  }
+  .field-input:focus { border-color: var(--gold-dim); }
+  .rot-control { display: flex; align-items: center; gap: 12px; }
+  .rot-btn {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    color: var(--gold);
+    font-family: var(--mono);
+    font-size: 18px;
+    width: 36px; height: 36px;
+    cursor: pointer;
+    border-radius: 2px;
+    transition: all 0.15s;
+    display: flex; align-items: center; justify-content: center;
+  }
+  .rot-btn:hover { border-color: var(--gold); background: var(--surface2); }
+  .rot-display { font-family: var(--serif); font-size: 28px; color: var(--gold); min-width: 50px; text-align: center; line-height: 1; }
+  .rot-label { color: var(--text-dim); font-size: 11px; letter-spacing: 1px; }
+  input[type=range] { flex: 1; accent-color: var(--gold); cursor: pointer; }
+  .action-btns { display: flex; gap: 10px; margin-top: 6px; }
+  .btn {
+    flex: 1;
+    padding: 10px;
+    border: 1px solid;
+    font-family: var(--mono);
+    font-size: 11px;
+    letter-spacing: 2px;
+    text-transform: uppercase;
+    cursor: pointer;
+    border-radius: 2px;
+    transition: all 0.15s;
+  }
+  .btn-enc { background: transparent; border-color: var(--green); color: var(--green); }
+  .btn-enc:hover { background: #0d2018; }
+  .btn-dec { background: transparent; border-color: var(--blue); color: var(--blue); }
+  .btn-dec:hover { background: #0d1820; }
+  .btn-clear { background: transparent; border-color: var(--border); color: var(--text-dim); flex: 0 0 auto; padding: 10px 16px; }
+  .btn-clear:hover { border-color: var(--red); color: var(--red); }
+  .result-box {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-left: 3px solid var(--green);
+    padding: 14px 18px;
+    margin-top: 14px;
+    min-height: 52px;
+    position: relative;
+    border-radius: 0 2px 2px 0;
+    display: none;
+  }
+  .result-box.dec { border-left-color: var(--blue); }
+  .result-label { font-size: 9px; letter-spacing: 2px; color: var(--text-dim); text-transform: uppercase; margin-bottom: 4px; }
+  .result-text { font-family: var(--serif); font-size: 20px; color: var(--green); letter-spacing: 3px; word-break: break-all; }
+  .result-box.dec .result-text { color: var(--blue); }
+  .result-meta { position: absolute; right: 14px; top: 14px; font-size: 10px; color: var(--text-dim); }
+  .mapper-wrap { overflow-x: auto; margin-top: 12px; padding-bottom: 4px; }
+  .mapper { display: flex; gap: 2px; min-width: max-content; }
+  .map-col { display: flex; flex-direction: column; align-items: center; gap: 2px; }
+  .map-cell { width: 30px; height: 30px; display: flex; align-items: center; justify-content: center; font-size: 12px; font-weight: 600; border-radius: 2px; transition: all 0.3s; }
+  .map-orig { background: var(--surface2); border: 1px solid var(--border); color: var(--text); }
+  .map-enc { background: #0d2018; border: 1px solid #1a4030; color: var(--green); }
+  .map-col.highlight-col .map-orig { border-color: var(--gold); background: #1a1508; color: var(--gold); }
+  .map-col.highlight-col .map-enc { border-color: var(--gold-dim); color: var(--gold); }
+  .warn { color: var(--red); font-size: 11px; margin-top: 6px; display: none; }
+
+  /* ── DISCO TAB ── */
+  .disco-section {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-left: 3px solid var(--gold-dim);
+    padding: 24px;
+    margin-bottom: 20px;
+    border-radius: 0 4px 4px 0;
+  }
+  .disco-section h2 {
+    font-family: var(--serif);
+    font-size: 13px;
+    color: var(--gold);
+    letter-spacing: 3px;
+    margin-bottom: 18px;
+    text-transform: uppercase;
+  }
+  .disco-layout { display: flex; align-items: center; gap: 32px; flex-wrap: wrap; margin-bottom: 24px; }
+  .disco-controls { display: flex; flex-direction: column; gap: 16px; min-width: 200px; flex: 1; }
+  .dc-label { font-size: 10px; letter-spacing: 2px; color: var(--text-dim); text-transform: uppercase; margin-bottom: 4px; }
+  .dc-val { font-family: var(--serif); font-size: 28px; color: var(--gold); }
+  .dc-sub { font-size: 11px; color: var(--text-dim); margin-top: 2px; }
+  .letra-input {
+    background: var(--surface2);
+    border: 1px solid var(--border);
+    color: var(--text);
+    font-family: var(--mono);
+    font-size: 24px;
+    font-weight: 600;
+    width: 52px;
+    padding: 6px 10px;
+    text-align: center;
+    text-transform: uppercase;
+    border-radius: 2px;
+    outline: none;
+  }
+  .letra-input:focus { border-color: var(--gold-dim); }
+
+  /* Formula strip */
+  .formula-strip {
+    background: var(--surface2);
+    border: 1px solid var(--border);
+    border-radius: 4px;
+    padding: 16px 20px;
+    margin-bottom: 20px;
+  }
+  .formula-main {
+    font-family: var(--mono);
+    font-size: 15px;
+    color: var(--text);
+    margin-bottom: 10px;
+    padding-bottom: 10px;
+    border-bottom: 1px solid var(--border);
+  }
+  .formula-desc { font-size: 13px; color: var(--text-dim); line-height: 1.8; }
+  .hl-gold { color: var(--amber); font-weight: 600; }
+  .hl-blue { color: var(--blue); font-weight: 600; }
+  .hl-green { color: var(--green); font-weight: 600; }
+
+  /* Step cards */
+  .step-cards { display: grid; grid-template-columns: repeat(auto-fit, minmax(160px, 1fr)); gap: 10px; margin-bottom: 20px; }
+  .step-card {
+    background: var(--surface2);
+    border: 1px solid var(--border);
+    border-radius: 4px;
+    padding: 14px 16px;
+    transition: border-color 0.2s, background 0.2s;
+  }
+  .step-card.active { border-color: var(--blue); background: #0d1820; }
+  .step-num { font-size: 10px; letter-spacing: 2px; color: var(--text-dim); text-transform: uppercase; margin-bottom: 6px; }
+  .step-card.active .step-num { color: var(--blue); }
+  .step-expr { font-family: var(--mono); font-size: 13px; color: var(--text); margin-bottom: 4px; font-weight: 600; }
+  .step-desc { font-size: 11px; color: var(--text-dim); line-height: 1.5; }
+
+  /* Mod explainer */
+  .mod-explainer {
+    background: var(--surface2);
+    border: 1px solid var(--border);
+    border-radius: 4px;
+    padding: 18px 20px;
+  }
+  .mod-explainer h3 {
+    font-family: var(--serif);
+    font-size: 12px;
+    color: var(--gold);
+    letter-spacing: 2px;
+    text-transform: uppercase;
+    margin-bottom: 14px;
+  }
+  .mod-track {
+    display: flex;
+    height: 40px;
+    border: 1px solid var(--border);
+    border-radius: 2px;
+    overflow: hidden;
+    margin-bottom: 12px;
+    background: var(--surface);
+  }
+  .mod-cell {
+    flex: 1;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-family: var(--mono);
+    font-size: 11px;
+    color: var(--text-dim);
+    border-right: 1px solid var(--border);
+    transition: background 0.25s, color 0.25s;
+    min-width: 22px;
+  }
+  .mod-cell:last-child { border-right: none; }
+  .mod-cell.over { background: #2a1010; color: var(--red); }
+  .mod-cell.land { background: #0d2018; color: var(--green); font-weight: 600; }
+  .mod-desc { font-size: 12px; color: var(--text-dim); line-height: 1.7; }
+  .mod-desc strong { color: var(--text); }
+  .mod-desc code { background: var(--surface); color: var(--blue); padding: 1px 5px; border-radius: 2px; font-size: 11px; }
+</style>
+</head>
+<body>
+
+<div class="header">
+  <div class="subtitle">LABORATORIO PROGRAMACIÓN AVANZADA</div>
+  <h1>Cifrado de César</h1>
+
+</div>
+
+<div class="tabs">
+  <div class="tab active" onclick="showTab('guia',this)">📜 Guía</div>
+  <div class="tab" onclick="showTab('cifrador',this)">🔐 Cifrador</div>
+  <div class="tab" onclick="showTab('disco',this)">⚙ Algoritmo</div>
+  <div class="tab" onclick="showTab('concepto',this)">💡 Conceptos Java</div>
+</div>
+
+<!-- ═══════════════ GUÍA ═══════════════ -->
+<div id="tab-guia" class="content active">
+
+  <div class="section">
+    <h2>¿Qué es la Criptografía?</h2>
+    <p>La <span class="highlight">criptografía</span> es la ciencia y arte de escribir mensajes en forma cifrada. Un mensaje codificado debe ser privado: solo quien envía y quien recibe tiene acceso al contenido.</p>
+    <p>Sus primeros usos eran militares. Aunque los sistemas antiguos se consideran obsoletos hoy, sus conceptos son la base de la criptografía moderna.</p>
+  </div>
+
+  <div class="section">
+    <h2>La Cifra de César — ROT<em>N</em></h2>
+    <p>Consiste en <span class="highlight">desplazar cada letra del abecedario N posiciones</span>. La transformación se llama <span class="highlight">ROTN</span> (ROTAR N posiciones) porque es un cambio cíclico: cuando llega a Z, vuelve a A.</p>
+    <p>Trabajamos con un <span class="highlight">alfabeto de 26 letras</span> (sin Ñ, opcional). Solo mayúsculas. Los espacios se conservan.</p>
+    <div class="example-box">
+      <div class="row"><span class="label">Texto original</span><span class="val">IMPULSO</span></div>
+      <div class="sep"></div>
+      <div class="row"><span class="label">ROT1</span><span class="val enc">JNQVMTP</span></div>
+      <div class="row"><span class="label">ROT2</span><span class="val enc">KÑRWNUQ*</span></div>
+      <div class="sep"></div>
+      <div class="row"><span class="label">HOLA AMIGOS + ROT2</span><span class="val enc">JQNC COKIQU</span></div>
+    </div>
+    <p style="margin-top:10px; font-size:11px; color:var(--text-dim)">*El ejemplo con Ñ es del enunciado; el cifrador de pruebas usa el abecedario de 26 letras inglés.</p>
+    <div style="margin-top:16px">
+      <div style="font-size:11px; letter-spacing:2px; color:var(--text-dim); text-transform:uppercase; margin-bottom:8px">Abecedario — ROT3 (ejemplo visual)</div>
+      <div id="alpha-static" class="alphabet-grid"></div>
+    </div>
+  </div>
+
+  <div class="section">
+    <h2>Lo que pide el programa</h2>
+    <div class="terminal">
+      <div class="t-gold">############################</div>
+      <div class="t-gold">###   CIFRADO DE CESAR   ###</div>
+      <div class="t-gold">############################</div>
+      <div>&nbsp;</div>
+      <div class="t-dim">Menu</div>
+      <div>&nbsp;</div>
+      <div class="t-green">1. Configurar</div>
+      <div class="t-green">2. Encriptar</div>
+      <div class="t-green">3. Desencriptar</div>
+      <div class="t-red">0. Salir</div>
+      <div>&nbsp;</div>
+      <div class="prompt t-dim">2</div>
+      <div>&nbsp;</div>
+      <div>Ingrese texto</div>
+      <div class="prompt t-dim">IMPULSO</div>
+      <div class="t-dim">─────────────────────</div>
+      <div>El mensaje encriptado es:</div>
+      <div class="t-blue">MQTYPWS</div>
+      <div class="t-dim">─────────────────────</div>
+      <div>&nbsp;</div>
+      <div class="t-dim" style="font-size:10px">PRESIONE CUALQUIER TECLA PARA VOLVER AL MENU</div>
+    </div>
+  </div>
+
+  <div class="section">
+    <h2>Extras opcionales</h2>
+    <ul class="extras-list">
+      <li><strong>Control de errores:</strong></li>
+      <li class="sub">No permitir caracteres especiales ni números</li>
+      <li class="sub">Si ingresa minúsculas, convertirlas automáticamente a mayúsculas</li>
+      <li>Soporte para la letra <strong>Ñ</strong></li>
+      <li>Investigar e implementar el cifrado <span class="highlight">ATBASH</span></li>
+    </ul>
+  </div>
+
+</div>
+
+<!-- ═══════════════ CIFRADOR ═══════════════ -->
+<div id="tab-cifrador" class="content">
+
+  <div class="cifrador">
+    <h2>CIFRADOR / DESCIFRADOR DE PRUEBA</h2>
+    <div class="field-group">
+      <label class="field-label">Texto de entrada</label>
+      <input class="field-input" id="input-text" type="text" placeholder="Escribí tu mensaje aquí..." oninput="onInputChange()" maxlength="120">
+      <div class="warn" id="warn-chars">⚠ Solo se permiten letras y espacios.</div>
+    </div>
+    <div class="field-group">
+      <label class="field-label">Rotación (ROT <span id="rot-val-label">3</span>)</label>
+      <div class="rot-control">
+        <button class="rot-btn" onclick="changeRot(-1)">−</button>
+        <div class="rot-display" id="rot-display">3</div>
+        <button class="rot-btn" onclick="changeRot(1)">+</button>
+        <input type="range" id="rot-slider" min="1" max="25" value="3" oninput="setRotSlider(this.value)">
+        <span class="rot-label">1–25</span>
+      </div>
+    </div>
+    <div class="action-btns">
+      <button class="btn btn-enc" onclick="doAction('enc')">▶ Encriptar</button>
+      <button class="btn btn-dec" onclick="doAction('dec')">◀ Desencriptar</button>
+      <button class="btn btn-clear" onclick="clearAll()">✕</button>
+    </div>
+    <div id="result-box" class="result-box">
+      <div class="result-label" id="result-label">Mensaje encriptado</div>
+      <div class="result-text" id="result-text"></div>
+      <div class="result-meta" id="result-meta"></div>
+    </div>
+  </div>
+
+  <div style="background:var(--surface); border:1px solid var(--border); padding:20px 24px; border-radius:4px;">
+    <div style="font-size:11px; letter-spacing:2px; color:var(--text-dim); text-transform:uppercase; margin-bottom:4px">Mapa de transformación — ROT <span id="map-rot-label">3</span></div>
+    <div style="font-size:11px; color:var(--text-dim); margin-bottom:10px">Original → Encriptado (las letras del texto ingresado se resaltan en dorado)</div>
+    <div class="mapper-wrap">
+      <div class="mapper" id="mapper"></div>
+    </div>
+  </div>
+
+</div>
+
+<!-- ═══════════════ ALGORITMO / DISCO ═══════════════ -->
+<div id="tab-disco" class="content">
+
+  <div class="disco-section">
+    <h2>El disco de César — Rotación visual</h2>
+    <div class="disco-layout">
+
+      <svg id="disco-svg" width="240" height="240" viewBox="-120 -120 240 240" role="img" style="flex-shrink:0">
+        <title>Disco de César</title>
+        <g id="d-ring-outer"></g>
+        <g id="d-ring-inner"></g>
+        <circle r="40" fill="var(--surface2)" stroke="var(--border)" stroke-width="1"/>
+        <text id="d-orig" y="-9" text-anchor="middle" dominant-baseline="central"
+          style="font-size:20px;font-weight:600;fill:var(--text);font-family:'Source Code Pro',monospace">A</text>
+        <text y="4" text-anchor="middle" dominant-baseline="central"
+          style="font-size:10px;fill:var(--text-dim);font-family:'Source Code Pro',monospace">→</text>
+        <text id="d-enc" y="18" text-anchor="middle" dominant-baseline="central"
+          style="font-size:20px;font-weight:600;fill:#4c8bc9;font-family:'Source Code Pro',monospace">D</text>
+      </svg>
+
+      <div class="disco-controls">
+        <div>
+          <div class="dc-label">Letra a cifrar</div>
+          <input class="letra-input" id="d-letra" maxlength="1" value="A" oninput="discoUpdate()">
+        </div>
+        <div>
+          <div class="dc-label">Rotación (ROT <span id="d-rot-n">3</span>)</div>
+          <input type="range" min="1" max="25" value="3" id="d-rot-slider" oninput="discoOnRot(+this.value)" style="width:100%; accent-color:var(--gold)">
+        </div>
+        <div>
+          <div class="dc-val" id="d-result-big">D</div>
+          <div class="dc-sub" id="d-result-sub">A (pos 0) + ROT3 = D (pos 3)</div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- FÓRMULA -->
+  <div class="formula-strip">
+    <div class="formula-main">
+      Resultado = (( c - 'A' + rot ) % 26) + 'A'
+    </div>
+    <div class="formula-desc">
+      <span class="hl-gold">c − 'A'</span> convierte la letra en un número (A=0, B=1 … Z=25).
+      Se le suma <span class="hl-blue">rot</span>.
+      El operador <span class="hl-green">% 26</span> asegura que si el resultado supera la Z,
+      <em>vuelva a empezar desde la A</em>.
+      Finalmente <strong>+ 'A'</strong> convierte el número de vuelta en una letra.
+    </div>
+  </div>
+
+  <!-- PASO A PASO -->
+  <div class="step-cards">
+    <div class="step-card" id="sc0">
+      <div class="step-num">Paso 1</div>
+      <div class="step-expr" id="se0">c − 'A'</div>
+      <div class="step-desc" id="sd0">Posición en el alfabeto (0–25)</div>
+    </div>
+    <div class="step-card" id="sc1">
+      <div class="step-num">Paso 2</div>
+      <div class="step-expr" id="se1">0 + 3</div>
+      <div class="step-desc" id="sd1">Suma la rotación</div>
+    </div>
+    <div class="step-card" id="sc2">
+      <div class="step-num">Paso 3</div>
+      <div class="step-expr" id="se2">3 % 26</div>
+      <div class="step-desc" id="sd2">Módulo: queda dentro de 0–25</div>
+    </div>
+    <div class="step-card" id="sc3">
+      <div class="step-num">Paso 4</div>
+      <div class="step-expr" id="se3">3 + 'A'</div>
+      <div class="step-desc" id="sd3">Número → letra</div>
+    </div>
+  </div>
+
+  <!-- MÓDULO EXPLICADO -->
+  <div class="mod-explainer">
+    <h3>¿Por qué el operador resto ( % ) nos salva?</h3>
+    <div class="mod-track" id="mod-track"></div>
+    <div class="mod-desc" id="mod-desc"></div>
+  </div>
+
+</div>
+
+<!-- ═══════════════ CONCEPTOS JAVA ═══════════════ -->
+<div id="tab-concepto" class="content">
+
+  <div class="section">
+    <h2>Conceptos necesarios en Java</h2>
+    <ul class="concept-list">
+      <li><span>Transformar entero → letra (ASCII): <code>(char)(65 + i)</code> — A=65, B=66 … Z=90</span></li>
+      <li><span>String → array de caracteres: <code>"HOLA".toCharArray()</code></span></li>
+      <li><span>Pasar a mayúsculas: <code>texto.toUpperCase()</code></span></li>
+      <li><span>Largo del String: <code>texto.length()</code></span></li>
+      <li><span>Concatenar chars: <code>resultado += (char) nuevoValor</code></span></li>
+      <li><span>Fórmula de rotación cíclica: <code>((c - 'A' + rot) % 26) + 'A'</code></span></li>
+      <li><span>Desencriptar = rotar en sentido inverso: <code>((c - 'A' - rot + 26) % 26) + 'A'</code></span></li>
+      <li><span>Conservar espacios: verificar <code>c == ' '</code> antes de transformar</span></li>
+    </ul>
+  </div>
+
+  <div class="section">
+    <h2>Lógica del cifrado — paso a paso</h2>
+    <div class="terminal" style="line-height:1.9; font-size:12px">
+      <div class="t-dim">// 1. Leer el texto y pasarlo a mayúsculas</div>
+      <div class="t-green">String texto = sc.nextLine().toUpperCase();</div>
+      <div>&nbsp;</div>
+      <div class="t-dim">// 2. Recorrer cada carácter</div>
+      <div class="t-green">for (char c : texto.toCharArray()) {</div>
+      <div>&nbsp;</div>
+      <div class="t-dim">  // 3. Conservar espacios sin cambiar</div>
+      <div class="t-blue">  if (c == ' ') { resultado += ' '; continue; }</div>
+      <div>&nbsp;</div>
+      <div class="t-dim">  // 4. Calcular posición original (0-25)</div>
+      <div class="t-blue">  int pos = c - 'A';</div>
+      <div>&nbsp;</div>
+      <div class="t-dim">  // 5. Aplicar rotación cíclica</div>
+      <div class="t-blue">  int nueva = (pos + rot) % 26;</div>
+      <div>&nbsp;</div>
+      <div class="t-dim">  // 6. Convertir de vuelta a char</div>
+      <div class="t-blue">  resultado += (char)('A' + nueva);</div>
+      <div class="t-green">}</div>
+    </div>
+  </div>
+
+  <div class="section">
+    <h2>Código ASCII — letras mayúsculas</h2>
+    <div id="alpha-ascii" class="alphabet-grid" style="margin-top:8px"></div>
+  </div>
+
+</div>
+
+<script>
+const ALPHA = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ';
+
+/* ─── Tab switching ─── */
+function showTab(name, el) {
+  document.querySelectorAll('.content').forEach(c => c.classList.remove('active'));
+  document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+  document.getElementById('tab-' + name).classList.add('active');
+  el.classList.add('active');
+}
+
+/* ─── Shared rot for cifrador tab ─── */
+let cifRot = 3;
+
+/* ─── Static alphabet ROT3 (guía) ─── */
+function buildStaticAlpha() {
+  const g = document.getElementById('alpha-static');
+  for (let i = 0; i < 26; i++) {
+    const shifted = (i + 3) % 26;
+    const div = document.createElement('div');
+    div.className = 'alpha-cell';
+    div.innerHTML = `<span class="letter" style="color:${i<3?'var(--blue)':'var(--gold)'}">${ALPHA[i]}</span>
+                     <span class="num" style="color:${i<3?'var(--blue)':'var(--text-dim)'}">→${ALPHA[shifted]}</span>`;
+    g.appendChild(div);
+  }
+}
+
+/* ─── ASCII table ─── */
+function buildAsciiTable() {
+  const g = document.getElementById('alpha-ascii');
+  for (let i = 0; i < 26; i++) {
+    const div = document.createElement('div');
+    div.className = 'alpha-cell';
+    div.innerHTML = `<span class="letter">${ALPHA[i]}</span><span class="num">${65+i}</span>`;
+    g.appendChild(div);
+  }
+}
+
+/* ─── Cifrador: mapper ─── */
+function buildMapper(highlightChars) {
+  const m = document.getElementById('mapper');
+  m.innerHTML = '';
+  const chars = (highlightChars||'').replace(/ /g,'').toUpperCase();
+  for (let i = 0; i < 26; i++) {
+    const enc = ALPHA[(i + cifRot) % 26];
+    const col = document.createElement('div');
+    col.className = 'map-col' + (chars.includes(ALPHA[i]) ? ' highlight-col' : '');
+    col.innerHTML = `<div class="map-cell map-orig">${ALPHA[i]}</div><div class="map-cell map-enc">${enc}</div>`;
+    m.appendChild(col);
+  }
+  document.getElementById('map-rot-label').textContent = cifRot;
+}
+
+function changeRot(delta) {
+  cifRot = Math.max(1, Math.min(25, cifRot + delta));
+  document.getElementById('rot-display').textContent = cifRot;
+  document.getElementById('rot-val-label').textContent = cifRot;
+  document.getElementById('rot-slider').value = cifRot;
+  const txt = (document.getElementById('input-text').value||'').replace(/[^A-Za-z ]/g,'').toUpperCase();
+  buildMapper(txt);
+}
+
+function setRotSlider(v) {
+  cifRot = parseInt(v);
+  document.getElementById('rot-display').textContent = cifRot;
+  document.getElementById('rot-val-label').textContent = cifRot;
+  const txt = (document.getElementById('input-text').value||'').replace(/[^A-Za-z ]/g,'').toUpperCase();
+  buildMapper(txt);
+}
+
+function caesar(text, r) {
+  return text.toUpperCase().split('').map(c => {
+    if (c === ' ') return ' ';
+    if (c < 'A' || c > 'Z') return c;
+    return ALPHA[(c.charCodeAt(0) - 65 + r + 26) % 26];
+  }).join('');
+}
+
+function doAction(mode) {
+  const raw = document.getElementById('input-text').value;
+  const cleaned = raw.toUpperCase().replace(/[^A-Z ]/g, '');
+  if (!cleaned.trim()) return;
+  const r = mode === 'enc' ? cifRot : (26 - cifRot);
+  const result = caesar(cleaned, r);
+  const box = document.getElementById('result-box');
+  box.style.display = 'block';
+  box.className = 'result-box' + (mode === 'dec' ? ' dec' : '');
+  document.getElementById('result-label').textContent = mode === 'enc' ? 'Mensaje encriptado' : 'Mensaje desencriptado';
+  document.getElementById('result-text').textContent = result;
+  document.getElementById('result-meta').textContent = `ROT${cifRot}`;
+  buildMapper(cleaned);
+}
+
+function onInputChange() {
+  const v = document.getElementById('input-text').value;
+  document.getElementById('warn-chars').style.display = /[^A-Za-z ]/.test(v) ? 'block' : 'none';
+  buildMapper(v.toUpperCase().replace(/[^A-Z]/g,''));
+}
+
+function clearAll() {
+  document.getElementById('input-text').value = '';
+  document.getElementById('result-box').style.display = 'none';
+  document.getElementById('warn-chars').style.display = 'none';
+  buildMapper('');
+}
+
+/* ─── DISCO ─── */
+let discoRot = 3, discoLetra = 'A';
+
+function discoIdx(c) { return c.charCodeAt(0) - 65; }
+
+function buildDiscoSvg() {
+  const outer = document.getElementById('d-ring-outer');
+  const inner = document.getElementById('d-ring-inner');
+  outer.innerHTML = ''; inner.innerHTML = '';
+  const OR = 108, IR2 = 66;
+  for (let i = 0; i < 26; i++) {
+    const ang = (i / 26) * Math.PI * 2 - Math.PI / 2;
+    const isOrig = ALPHA[i] === discoLetra;
+    const x1 = Math.cos(ang - Math.PI/26)*OR, y1 = Math.sin(ang - Math.PI/26)*OR;
+    const x2 = Math.cos(ang + Math.PI/26)*OR, y2 = Math.sin(ang + Math.PI/26)*OR;
+    const x1i = Math.cos(ang - Math.PI/26)*82, y1i = Math.sin(ang - Math.PI/26)*82;
+    const x2i = Math.cos(ang + Math.PI/26)*82, y2i = Math.sin(ang + Math.PI/26)*82;
+    const seg = document.createElementNS('http://www.w3.org/2000/svg','path');
+    seg.setAttribute('d', `M ${x1i} ${y1i} L ${x1} ${y1} A ${OR} ${OR} 0 0 1 ${x2} ${y2} L ${x2i} ${y2i} A 82 82 0 0 0 ${x1i} ${y1i}`);
+    seg.setAttribute('fill', isOrig ? '#c9a84c22' : 'none');
+    seg.setAttribute('stroke', '#2a2a35');
+    seg.setAttribute('stroke-width', '0.5');
+    outer.appendChild(seg);
+    const tx = Math.cos(ang)*95, ty = Math.sin(ang)*95;
+    const tl = document.createElementNS('http://www.w3.org/2000/svg','text');
+    tl.setAttribute('x', tx); tl.setAttribute('y', ty);
+    tl.setAttribute('text-anchor','middle'); tl.setAttribute('dominant-baseline','central');
+    tl.setAttribute('style', `font-size:9px;font-family:'Source Code Pro',monospace;font-weight:${isOrig?'600':'400'};fill:${isOrig?'#EF9F27':'#8a8578'};`);
+    tl.textContent = ALPHA[i];
+    outer.appendChild(tl);
+
+    const j = (i + discoRot) % 26;
+    const isEnc = i === discoIdx(discoLetra);
+    const tx2 = Math.cos(ang)*58, ty2 = Math.sin(ang)*58;
+    const tl2 = document.createElementNS('http://www.w3.org/2000/svg','text');
+    tl2.setAttribute('x', tx2); tl2.setAttribute('y', ty2);
+    tl2.setAttribute('text-anchor','middle'); tl2.setAttribute('dominant-baseline','central');
+    tl2.setAttribute('style', `font-size:9px;font-family:'Source Code Pro',monospace;font-weight:${isEnc?'600':'400'};fill:${isEnc?'#4c8bc9':'#8a8578'};`);
+    tl2.textContent = ALPHA[j];
+    inner.appendChild(tl2);
+  }
+}
+
+function discoUpdate() {
+  const raw = document.getElementById('d-letra').value;
+  const c = ((raw||'A').toUpperCase().replace(/[^A-Z]/g,'')[0]) || 'A';
+  discoLetra = c;
+  const pos = discoIdx(c);
+  const sum = pos + discoRot;
+  const modded = sum % 26;
+  const encChar = ALPHA[modded];
+
+  document.getElementById('d-orig').textContent = c;
+  document.getElementById('d-enc').textContent = encChar;
+  document.getElementById('d-rot-n').textContent = discoRot;
+  document.getElementById('d-result-big').textContent = encChar;
+  document.getElementById('d-result-sub').textContent = `${c} (pos ${pos}) + ROT${discoRot} = ${encChar} (pos ${modded})`;
+
+  document.getElementById('se0').textContent = `'${c}' − 'A' = ${pos}`;
+  document.getElementById('sd0').textContent = `La letra ${c} ocupa la posición ${pos}`;
+  document.getElementById('se1').textContent = `${pos} + ${discoRot} = ${sum}`;
+  document.getElementById('sd1').textContent = sum > 25 ? `¡Supera la Z (25)! Aplicar % 26` : `Queda dentro del rango 0–25`;
+  document.getElementById('se2').textContent = `${sum} % 26 = ${modded}`;
+  document.getElementById('sd2').textContent = sum > 25 ? `Vuelve al inicio: ${sum} − 26 = ${modded}` : `No supera 25, sin cambios`;
+  document.getElementById('se3').textContent = `${modded} + 'A' = '${encChar}'`;
+  document.getElementById('sd3').textContent = `Posición ${modded} → letra ${encChar}`;
+
+  document.getElementById('sc1').classList.toggle('active', sum > 25);
+  document.getElementById('sc2').classList.toggle('active', sum > 25);
+
+  buildModTrack(sum, modded);
+  buildDiscoSvg();
+}
+
+function discoOnRot(v) { discoRot = v; discoUpdate(); }
+
+function buildModTrack(sum, modded) {
+  const track = document.getElementById('mod-track');
+  track.innerHTML = '';
+  const max = Math.min(sum, 28);
+  for (let i = 0; i <= max; i++) {
+    const div = document.createElement('div');
+    div.className = 'mod-cell';
+    div.textContent = i;
+    if (i > 25) div.classList.add('over');
+    if (i === sum) div.classList.add('land');
+    track.appendChild(div);
+  }
+  if (sum > 28) {
+    const el = document.createElement('div'); el.className='mod-cell'; el.textContent='…'; track.appendChild(el);
+    const el2 = document.createElement('div'); el2.className='mod-cell land'; el2.textContent=sum; track.appendChild(el2);
+  }
+  const d = document.getElementById('mod-desc');
+  if (sum > 25) {
+    d.innerHTML = `Con <strong>${discoLetra}</strong> (pos ${sum - discoRot}) + ROT${discoRot} = <strong>${sum}</strong>. Eso supera la Z (posición 25).<br>
+    El operador <code>% 26</code> devuelve el <em>sobrante</em> de dividir por 26: ${sum} ÷ 26 = ${Math.floor(sum/26)} con resto <strong>${modded}</strong> → letra <strong>${ALPHA[modded]}</strong>.<br>
+    Como un reloj que después del 12 vuelve al 1, el alfabeto vuelve a la A después de la Z.`;
+  } else {
+    d.innerHTML = `Con <strong>${discoLetra}</strong> (pos ${sum - discoRot}) + ROT${discoRot} = <strong>${sum}</strong>. No supera 25, así que <code>% 26</code> no cambia nada: queda en posición <strong>${modded}</strong> → letra <strong>${ALPHA[modded]}</strong>.<br>
+    Probá con las últimas letras del alfabeto (<strong>X, Y, Z</strong>) para ver el módulo en acción.`;
+  }
+}
+
+/* ─── Init ─── */
+buildStaticAlpha();
+buildAsciiTable();
+buildMapper('');
+discoUpdate();
+</script>
+</body>
+</html>
