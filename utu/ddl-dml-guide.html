@@ -1,0 +1,882 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>DDL & DML — SQL para Bases de Datos</title>
+<link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;600;700&family=Sora:wght@300;400;600;700;800&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --bg:        #0d1117;
+    --surface:   #161b22;
+    --surface2:  #1c2333;
+    --border:    #30363d;
+    --text:      #e6edf3;
+    --muted:     #8b949e;
+    --ddl:       #3fb950;   /* verde DDL */
+    --ddl-dim:   #1a3a24;
+    --dml:       #58a6ff;   /* azul DML */
+    --dml-dim:   #0d2347;
+    --warn:      #f85149;
+    --warn-dim:  #3d1212;
+    --tip:       #d2a679;
+    --tip-dim:   #2e1f0d;
+    --kw:        #ff7b72;
+    --str:       #a5d6ff;
+    --num:       #79c0ff;
+    --cmt:       #8b949e;
+    --fn:        #d2a679;
+    --type:      #ffa657;
+  }
+
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+  html { scroll-behavior: smooth; }
+
+  body {
+    background: var(--bg);
+    color: var(--text);
+    font-family: 'Sora', sans-serif;
+    font-size: 15px;
+    line-height: 1.7;
+  }
+
+  /* ── NAV ── */
+  nav {
+    position: sticky; top: 0; z-index: 100;
+    background: rgba(13,17,23,.92);
+    backdrop-filter: blur(12px);
+    border-bottom: 1px solid var(--border);
+    padding: .6rem 2rem;
+    display: flex; gap: 1.4rem; align-items: center;
+    overflow-x: auto;
+  }
+  nav span { font-weight: 800; font-size: .8rem; letter-spacing: .12em; text-transform: uppercase; color: var(--muted); white-space: nowrap; }
+  nav a {
+    font-size: .78rem; font-weight: 600; text-decoration: none;
+    padding: .28rem .75rem; border-radius: 20px;
+    transition: background .2s, color .2s; white-space: nowrap;
+  }
+  nav a.ddl { color: var(--ddl); border: 1px solid var(--ddl-dim); }
+  nav a.ddl:hover { background: var(--ddl-dim); }
+  nav a.dml { color: var(--dml); border: 1px solid var(--dml-dim); }
+  nav a.dml:hover { background: var(--dml-dim); }
+
+  /* ── HERO ── */
+  .hero {
+    padding: 4rem 2rem 3rem;
+    max-width: 860px; margin: 0 auto;
+    text-align: center;
+  }
+  .hero-badges { display: flex; gap: .8rem; justify-content: center; margin-bottom: 1.2rem; }
+  .badge {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: .7rem; font-weight: 700; letter-spacing: .1em;
+    padding: .3rem .9rem; border-radius: 20px; text-transform: uppercase;
+  }
+  .badge.ddl { background: var(--ddl-dim); color: var(--ddl); border: 1px solid var(--ddl); }
+  .badge.dml { background: var(--dml-dim); color: var(--dml); border: 1px solid var(--dml); }
+  .hero h1 { font-size: 2.6rem; font-weight: 800; line-height: 1.15; margin-bottom: .8rem; }
+  .hero p { color: var(--muted); font-size: 1rem; max-width: 540px; margin: 0 auto; }
+
+  /* ── LAYOUT ── */
+  main { max-width: 860px; margin: 0 auto; padding: 0 2rem 6rem; }
+
+  /* ── SECTION HEADERS ── */
+  .section-header {
+    display: flex; align-items: center; gap: 1rem;
+    margin: 3.5rem 0 2rem;
+    padding-bottom: .8rem;
+    border-bottom: 2px solid var(--border);
+  }
+  .section-header.ddl { border-color: var(--ddl); }
+  .section-header.dml { border-color: var(--dml); }
+  .section-tag {
+    font-family: 'JetBrains Mono', monospace; font-size: .65rem; font-weight: 700;
+    letter-spacing: .14em; text-transform: uppercase;
+    padding: .25rem .7rem; border-radius: 4px;
+  }
+  .section-tag.ddl { background: var(--ddl-dim); color: var(--ddl); }
+  .section-tag.dml { background: var(--dml-dim); color: var(--dml); }
+  .section-header h2 { font-size: 1.6rem; font-weight: 700; }
+
+  /* ── CARDS ── */
+  .card {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    padding: 1.6rem;
+    margin-bottom: 1.4rem;
+  }
+  .card h3 {
+    font-size: 1.05rem; font-weight: 700; margin-bottom: .8rem;
+    display: flex; align-items: center; gap: .5rem;
+  }
+  .card h3 .cmd {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: .95rem;
+    padding: .1rem .5rem; border-radius: 4px;
+  }
+  .card h3 .cmd.ddl { background: var(--ddl-dim); color: var(--ddl); }
+  .card h3 .cmd.dml { background: var(--dml-dim); color: var(--dml); }
+  .card p { color: var(--muted); margin-bottom: .9rem; font-size: .9rem; }
+
+  /* ── CODE BLOCK ── */
+  .code-wrap { position: relative; margin: .6rem 0; }
+  .code-label {
+    position: absolute; top: .55rem; right: .7rem;
+    font-family: 'JetBrains Mono', monospace; font-size: .6rem;
+    color: var(--muted); letter-spacing: .08em; text-transform: uppercase; pointer-events: none;
+  }
+  pre {
+    background: #010409;
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    padding: 1rem 1.1rem;
+    overflow-x: auto;
+    font-family: 'JetBrains Mono', monospace;
+    font-size: .82rem;
+    line-height: 1.65;
+  }
+  .kw  { color: var(--kw);   font-weight: 600; }
+  .str { color: var(--str); }
+  .num { color: var(--num); }
+  .cmt { color: var(--cmt); font-style: italic; }
+  .fn  { color: var(--fn); }
+  .tp  { color: var(--type); }
+
+  /* ── CALLOUTS ── */
+  .callout {
+    display: flex; gap: .9rem; align-items: flex-start;
+    padding: 1rem 1.1rem; border-radius: 8px;
+    margin: .8rem 0; font-size: .88rem;
+  }
+  .callout-icon { font-size: 1.1rem; flex-shrink: 0; margin-top: .05rem; }
+  .callout.warn  { background: var(--warn-dim); border-left: 3px solid var(--warn); }
+  .callout.tip   { background: var(--tip-dim);  border-left: 3px solid var(--tip); }
+  .callout.info  { background: var(--dml-dim);  border-left: 3px solid var(--dml); }
+  .callout.ddl-note { background: var(--ddl-dim); border-left: 3px solid var(--ddl); }
+  .callout strong { font-weight: 700; }
+
+  /* ── TABS ── */
+  .tabs { display: flex; gap: .3rem; margin-bottom: -.1rem; flex-wrap: wrap; }
+  .tab-btn {
+    font-family: 'JetBrains Mono', monospace; font-size: .72rem; font-weight: 600;
+    padding: .4rem .85rem; border-radius: 6px 6px 0 0;
+    border: 1px solid var(--border); border-bottom: none;
+    background: var(--surface2); color: var(--muted);
+    cursor: pointer; transition: background .15s, color .15s;
+  }
+  .tab-btn.active { background: #010409; color: var(--text); border-color: var(--border); }
+  .tab-panel { display: none; }
+  .tab-panel.active { display: block; }
+
+  /* ── TWO COLS ── */
+  .two-col { display: grid; grid-template-columns: 1fr 1fr; gap: 1rem; }
+  @media(max-width:600px){ .two-col { grid-template-columns: 1fr; } }
+
+  /* ── TABLE ── */
+  table { width: 100%; border-collapse: collapse; font-size: .85rem; margin: .8rem 0; }
+  th, td { padding: .55rem .9rem; border: 1px solid var(--border); text-align: left; }
+  th { background: var(--surface2); font-weight: 700; font-family: 'JetBrains Mono', monospace; font-size: .78rem; }
+  tr:hover td { background: var(--surface2); }
+
+  /* ── PREDICATE LIST ── */
+  .pred-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(160px,1fr)); gap: .6rem; margin: .8rem 0; }
+  .pred-chip {
+    background: var(--surface2); border: 1px solid var(--border);
+    border-radius: 6px; padding: .5rem .7rem;
+    font-family: 'JetBrains Mono', monospace; font-size: .78rem;
+  }
+  .pred-chip span { display: block; color: var(--dml); font-weight: 700; }
+  .pred-chip small { color: var(--muted); font-size: .7rem; font-family: 'Sora', sans-serif; }
+
+  /* ── SUMMARY BOX ── */
+  .summary {
+    background: var(--surface2); border: 1px solid var(--border);
+    border-radius: 10px; padding: 1.4rem; margin: 3rem 0 1rem;
+  }
+  .summary h3 { font-size: 1rem; font-weight: 700; margin-bottom: 1rem; color: var(--muted); text-transform: uppercase; letter-spacing: .1em; font-family: 'JetBrains Mono', monospace; }
+  .summary-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(180px,1fr)); gap: .8rem; }
+  .summary-item { background: var(--surface); border: 1px solid var(--border); border-radius: 8px; padding: .8rem 1rem; }
+  .summary-item .cmd-name { font-family: 'JetBrains Mono', monospace; font-size: .9rem; font-weight: 700; margin-bottom: .3rem; }
+  .summary-item .cmd-name.ddl { color: var(--ddl); }
+  .summary-item .cmd-name.dml { color: var(--dml); }
+  .summary-item p { font-size: .78rem; color: var(--muted); }
+
+  /* ── DIVIDER ── */
+  .divider { height: 1px; background: var(--border); margin: 2.5rem 0; }
+</style>
+</head>
+<body>
+
+<nav>
+  <span>SQL</span>
+  <a class="ddl" href="#ddl">DDL</a>
+  <a class="ddl" href="#create-table">CREATE TABLE</a>
+  <a class="ddl" href="#tipos">Tipos de datos</a>
+  <a class="ddl" href="#restricciones">Restricciones</a>
+  <a class="ddl" href="#fk">FOREIGN KEY</a>
+  <a class="ddl" href="#alter-drop">ALTER / DROP</a>
+  <a class="dml" href="#dml">DML</a>
+  <a class="dml" href="#insert">INSERT</a>
+  <a class="dml" href="#update">UPDATE</a>
+  <a class="dml" href="#delete">DELETE</a>
+  <a class="dml" href="#cuidado">⚠ Cuidado</a>
+</nav>
+
+<div class="hero">
+  <div class="hero-badges">
+    <span class="badge ddl">DDL</span>
+    <span class="badge dml">DML</span>
+  </div>
+  <h1>Lenguajes de Definición<br>y Manipulación de Datos</h1>
+  <p>Aprende a crear la estructura de tu base de datos con <strong>DDL</strong> y a operar con sus datos con <strong>DML</strong>.</p>
+</div>
+
+<main>
+
+<!-- ══════════════════════════════════
+     DDL
+══════════════════════════════════ -->
+<div class="section-header ddl" id="ddl">
+  <span class="section-tag ddl">DDL</span>
+  <h2>Data Definition Language</h2>
+</div>
+
+<p style="color:var(--muted); margin-bottom:1.4rem;">El DDL se usa para <strong style="color:var(--text)">definir y modificar la estructura</strong> de la base de datos: tablas, columnas, restricciones y relaciones. No toca los datos, solo el esquema.</p>
+
+<div class="card">
+  <h3>Flujo de trabajo</h3>
+  <p>El diseño siempre parte del modelo conceptual (MER) y lógico (MR), y termina en sentencias SQL.</p>
+  <div class="code-wrap">
+    <div class="code-label">flujo</div>
+    <pre>Requerimientos  →  MER  →  Modelo Relacional  →  DDL  →  Base de Datos</pre>
+  </div>
+  <div class="callout info">
+    <span class="callout-icon">💡</span>
+    <div>Los nombres de tablas, columnas y restricciones se derivan <strong>directamente del modelo lógico</strong>.</div>
+  </div>
+</div>
+
+<!-- CREATE TABLE -->
+<div class="section-header ddl" id="create-table" style="margin-top:2.5rem">
+  <span class="section-tag ddl">DDL</span>
+  <h2>CREATE TABLE</h2>
+</div>
+
+<div class="card">
+  <h3><span class="cmd ddl">CREATE TABLE</span> — Sintaxis</h3>
+  <div class="code-wrap">
+    <div class="code-label">sintaxis</div>
+    <pre><span class="kw">CREATE TABLE</span> &lt;nombre_tabla&gt; (
+    &lt;columna_1&gt;  &lt;tipo_dato&gt;,
+    &lt;columna_2&gt;  &lt;tipo_dato&gt;,
+    <span class="cmt">-- ... más columnas</span>
+    &lt;columna_n&gt;  &lt;tipo_dato&gt;
+);</pre>
+  </div>
+</div>
+
+<div class="card">
+  <h3>Ejemplo — Tabla <code style="color:var(--ddl)">Persona</code></h3>
+  <div class="tabs">
+    <button class="tab-btn active" onclick="switchTab(this,'t1a')">Básico</button>
+    <button class="tab-btn" onclick="switchTab(this,'t1b')">Con restricciones</button>
+    <button class="tab-btn" onclick="switchTab(this,'t1c')">Producto</button>
+  </div>
+  <div id="t1a" class="tab-panel active">
+    <div class="code-wrap">
+      <pre><span class="kw">CREATE TABLE</span> Persona (
+    PersonaID   <span class="tp">INT</span>,
+    Apellido    <span class="tp">VARCHAR</span>(100),
+    Nombre      <span class="tp">VARCHAR</span>(100),
+    Direccion   <span class="tp">VARCHAR</span>(255),
+    Ciudad      <span class="tp">VARCHAR</span>(255)
+);</pre>
+    </div>
+    <div class="callout tip"><span class="callout-icon">📝</span><div>Versión básica sin restricciones. Funciona, pero acepta valores <code>NULL</code> en todos los campos.</div></div>
+  </div>
+  <div id="t1b" class="tab-panel">
+    <div class="code-wrap">
+      <pre><span class="kw">CREATE TABLE</span> Persona (
+    id_usuario  <span class="tp">INT</span>           <span class="kw">PRIMARY KEY</span>,
+    cedula      <span class="tp">INT</span>           <span class="kw">NOT NULL UNIQUE</span>,
+    nombre      <span class="tp">VARCHAR</span>(20)   <span class="kw">NOT NULL</span>,
+    apellido    <span class="tp">VARCHAR</span>(20)   <span class="kw">NOT NULL</span>,
+    calle       <span class="tp">VARCHAR</span>(50),
+    nro_puerta  <span class="tp">VARCHAR</span>(10),
+    apto        <span class="tp">VARCHAR</span>(5)
+);</pre>
+    </div>
+    <div class="callout ddl-note"><span class="callout-icon">✅</span><div>Versión robusta: la clave primaria garantiza unicidad e impide <code>NULL</code>. La cédula también es única.</div></div>
+  </div>
+  <div id="t1c" class="tab-panel">
+    <div class="code-wrap">
+      <pre><span class="kw">CREATE TABLE</span> Producto (
+    id_producto   <span class="tp">INT</span>            <span class="kw">PRIMARY KEY</span>,
+    codigo        <span class="tp">VARCHAR</span>(20)    <span class="kw">NOT NULL UNIQUE</span>,
+    descripcion   <span class="tp">VARCHAR</span>(200)   <span class="kw">NOT NULL</span>,
+    precio        <span class="tp">FLOAT</span>          <span class="kw">NOT NULL</span>,
+    stock         <span class="tp">INT</span>            <span class="kw">NOT NULL</span>,
+    categoria     <span class="tp">VARCHAR</span>(50)
+);</pre>
+    </div>
+    <div class="callout tip"><span class="callout-icon">💡</span><div>Otro ejemplo con campos numéricos. El campo <code>categoria</code> es opcional (acepta NULL).</div></div>
+  </div>
+</div>
+
+<!-- TIPOS DE DATOS -->
+<div class="section-header ddl" id="tipos" style="margin-top:2.5rem">
+  <span class="section-tag ddl">DDL</span>
+  <h2>Tipos de Datos</h2>
+</div>
+
+<div class="card">
+  <p>El tipo de dato define qué clase de valores puede almacenar una columna y cuánto espacio ocupa.</p>
+  <table>
+    <thead>
+      <tr><th>Categoría</th><th>Tipos</th><th>Uso típico</th></tr>
+    </thead>
+    <tbody>
+      <tr><td>Numéricos enteros</td><td><code>INT</code>, <code>BIGINT</code>, <code>SMALLINT</code></td><td>IDs, cantidades, edades</td></tr>
+      <tr><td>Numéricos decimales</td><td><code>FLOAT</code>, <code>DOUBLE</code>, <code>DECIMAL(p,s)</code></td><td>Precios, coordenadas</td></tr>
+      <tr><td>Texto fijo</td><td><code>CHAR(n)</code></td><td>Códigos de longitud fija (CI, ISO...)</td></tr>
+      <tr><td>Texto variable</td><td><code>VARCHAR(n)</code></td><td>Nombres, descripciones</td></tr>
+      <tr><td>Texto largo</td><td><code>TEXT</code></td><td>Comentarios, contenido libre</td></tr>
+      <tr><td>Fecha y hora</td><td><code>DATE</code>, <code>TIME</code>, <code>DATETIME</code></td><td>Fechas, horarios, timestamps</td></tr>
+      <tr><td>Booleano</td><td><code>BOOLEAN</code> / <code>TINYINT(1)</code></td><td>Flags activo/inactivo</td></tr>
+    </tbody>
+  </table>
+  <div class="callout tip">
+    <span class="callout-icon">💡</span>
+    <div><strong>CHAR vs VARCHAR:</strong> <code>CHAR(8)</code> siempre ocupa 8 caracteres (ideal para cédulas). <code>VARCHAR(100)</code> solo ocupa lo necesario (ideal para nombres).</div>
+  </div>
+</div>
+
+<!-- RESTRICCIONES -->
+<div class="section-header ddl" id="restricciones" style="margin-top:2.5rem">
+  <span class="section-tag ddl">DDL</span>
+  <h2>Restricciones (Constraints)</h2>
+</div>
+
+<div class="card">
+  <p>Las restricciones garantizan la <strong>integridad</strong> de los datos. Se definen al crear o modificar una tabla.</p>
+  <table>
+    <thead>
+      <tr><th>Restricción</th><th>Qué hace</th><th>Ejemplo</th></tr>
+    </thead>
+    <tbody>
+      <tr><td><code style="color:var(--kw)">NOT NULL</code></td><td>El campo no puede quedar vacío</td><td><code>nombre VARCHAR(50) NOT NULL</code></td></tr>
+      <tr><td><code style="color:var(--kw)">UNIQUE</code></td><td>Todos los valores deben ser distintos</td><td><code>email VARCHAR(100) UNIQUE</code></td></tr>
+      <tr><td><code style="color:var(--kw)">PRIMARY KEY</code></td><td>Clave principal: único + NOT NULL</td><td><code>PRIMARY KEY(id)</code></td></tr>
+      <tr><td><code style="color:var(--kw)">FOREIGN KEY</code></td><td>Referencia a otra tabla</td><td>Ver sección siguiente</td></tr>
+      <tr><td><code style="color:var(--kw)">DEFAULT</code></td><td>Valor por defecto si no se provee</td><td><code>stock INT DEFAULT 0</code></td></tr>
+    </tbody>
+  </table>
+</div>
+
+<!-- FOREIGN KEY -->
+<div class="section-header ddl" id="fk" style="margin-top:2.5rem">
+  <span class="section-tag ddl">DDL</span>
+  <h2>FOREIGN KEY</h2>
+</div>
+
+<div class="card">
+  <h3><span class="cmd ddl">FOREIGN KEY</span> — Ejemplo Jugador / Club</h3>
+  <p>Un jugador juega en un club. La tabla <code>Juega</code> relaciona ambas entidades usando claves foráneas.</p>
+
+  <div class="two-col" style="margin:.8rem 0">
+    <div>
+      <p style="font-family:'JetBrains Mono',monospace; font-size:.78rem; color:var(--ddl); margin-bottom:.4rem">▸ Jugador</p>
+      <div class="code-wrap">
+        <pre><span class="kw">CREATE TABLE</span> Jugador (
+    documento  <span class="tp">CHAR</span>(8)       <span class="kw">PRIMARY KEY</span>,
+    nombre     <span class="tp">VARCHAR</span>(100)  <span class="kw">NOT NULL</span>,
+    direccion  <span class="tp">VARCHAR</span>(200)
+);</pre>
+      </div>
+    </div>
+    <div>
+      <p style="font-family:'JetBrains Mono',monospace; font-size:.78rem; color:var(--ddl); margin-bottom:.4rem">▸ Club</p>
+      <div class="code-wrap">
+        <pre><span class="kw">CREATE TABLE</span> Club (
+    nombre     <span class="tp">VARCHAR</span>(100)  <span class="kw">PRIMARY KEY</span>,
+    fundacion  <span class="tp">DATE</span>,
+    ciudad     <span class="tp">VARCHAR</span>(100)
+);</pre>
+      </div>
+    </div>
+  </div>
+
+  <p style="font-family:'JetBrains Mono',monospace; font-size:.78rem; color:var(--ddl); margin-bottom:.4rem">▸ Juega (tabla relación)</p>
+  <div class="code-wrap">
+    <pre><span class="kw">CREATE TABLE</span> Juega (
+    documento     <span class="tp">CHAR</span>(8)       <span class="kw">NOT NULL</span>,
+    nombre_club   <span class="tp">VARCHAR</span>(100)  <span class="kw">NOT NULL</span>,
+    nro_camiseta  <span class="tp">INT</span>           <span class="kw">NOT NULL</span>,
+
+    <span class="kw">PRIMARY KEY</span> (documento),
+    <span class="kw">FOREIGN KEY</span> (documento)   <span class="kw">REFERENCES</span> Jugador(documento),
+    <span class="kw">FOREIGN KEY</span> (nombre_club) <span class="kw">REFERENCES</span> Club(nombre)
+);</pre>
+  </div>
+  <div class="callout warn">
+    <span class="callout-icon">⚠️</span>
+    <div>Para ser <strong>FOREIGN KEY</strong>, el campo en la tabla padre debe ser <strong>PRIMARY KEY</strong> o <strong>UNIQUE</strong>. Si no, el motor rechazará la sentencia.</div>
+  </div>
+</div>
+
+<div class="card">
+  <h3>Ejemplo adicional — Pedido / Cliente</h3>
+  <p>Un caso más cotidiano: pedidos que referencian clientes y productos.</p>
+  <div class="code-wrap">
+    <pre><span class="kw">CREATE TABLE</span> Cliente (
+    id_cliente  <span class="tp">INT</span>           <span class="kw">PRIMARY KEY</span>,
+    nombre      <span class="tp">VARCHAR</span>(100)  <span class="kw">NOT NULL</span>,
+    email       <span class="tp">VARCHAR</span>(100)  <span class="kw">UNIQUE</span>
+);
+
+<span class="kw">CREATE TABLE</span> Pedido (
+    id_pedido   <span class="tp">INT</span>   <span class="kw">PRIMARY KEY</span>,
+    fecha       <span class="tp">DATE</span>  <span class="kw">NOT NULL</span>,
+    id_cliente  <span class="tp">INT</span>   <span class="kw">NOT NULL</span>,
+    total       <span class="tp">FLOAT</span>,
+
+    <span class="kw">FOREIGN KEY</span> (id_cliente) <span class="kw">REFERENCES</span> Cliente(id_cliente)
+);</pre>
+  </div>
+</div>
+
+<!-- ALTER / DROP -->
+<div class="section-header ddl" id="alter-drop" style="margin-top:2.5rem">
+  <span class="section-tag ddl">DDL</span>
+  <h2>ALTER TABLE &amp; DROP</h2>
+</div>
+
+<div class="card">
+  <h3><span class="cmd ddl">ALTER TABLE</span></h3>
+  <p>Permite modificar la estructura de una tabla ya existente sin recrearla.</p>
+
+  <div class="tabs">
+    <button class="tab-btn active" onclick="switchTab(this,'t2a')">ADD columna</button>
+    <button class="tab-btn" onclick="switchTab(this,'t2b')">DROP columna</button>
+    <button class="tab-btn" onclick="switchTab(this,'t2c')">ADD FK</button>
+    <button class="tab-btn" onclick="switchTab(this,'t2d')">MODIFY</button>
+  </div>
+  <div id="t2a" class="tab-panel active">
+    <div class="code-wrap"><pre><span class="cmt">-- Agregar una columna nueva</span>
+<span class="kw">ALTER TABLE</span> Persona
+    <span class="kw">ADD</span> telefono <span class="tp">VARCHAR</span>(20);
+
+<span class="cmt">-- Agregar con valor por defecto</span>
+<span class="kw">ALTER TABLE</span> Producto
+    <span class="kw">ADD</span> activo <span class="tp">BOOLEAN</span> <span class="kw">DEFAULT</span> <span class="num">TRUE</span>;</pre></div>
+  </div>
+  <div id="t2b" class="tab-panel">
+    <div class="code-wrap"><pre><span class="cmt">-- Eliminar una columna</span>
+<span class="kw">ALTER TABLE</span> Persona
+    <span class="kw">DROP COLUMN</span> telefono;
+
+<span class="cmt">-- Ojo: esto es irreversible si no hay backup</span></pre></div>
+    <div class="callout warn"><span class="callout-icon">⚠️</span><div>Eliminar una columna <strong>borra todos sus datos</strong>. No hay deshacer sin backup.</div></div>
+  </div>
+  <div id="t2c" class="tab-panel">
+    <div class="code-wrap"><pre><span class="cmt">-- Agregar una FK después de crear la tabla</span>
+<span class="kw">ALTER TABLE</span> Pedido
+    <span class="kw">ADD CONSTRAINT</span> FK_Pedido_Cliente
+    <span class="kw">FOREIGN KEY</span> (id_cliente)
+    <span class="kw">REFERENCES</span> Cliente(id_cliente);</pre></div>
+  </div>
+  <div id="t2d" class="tab-panel">
+    <div class="code-wrap"><pre><span class="cmt">-- Cambiar tipo o restricción de una columna</span>
+<span class="kw">ALTER TABLE</span> Persona
+    <span class="kw">MODIFY</span> nombre <span class="tp">VARCHAR</span>(150) <span class="kw">NOT NULL</span>;
+
+<span class="kw">ALTER TABLE</span> Producto
+    <span class="kw">MODIFY</span> precio <span class="tp">DECIMAL</span>(10,2) <span class="kw">NOT NULL</span>;</pre></div>
+  </div>
+</div>
+
+<div class="card">
+  <h3><span class="cmd ddl">DROP TABLE</span></h3>
+  <p>Elimina una tabla completa, con todos sus datos y estructura.</p>
+  <div class="code-wrap">
+    <pre><span class="kw">DROP TABLE</span> Juega;          <span class="cmt">-- primero las tablas con FK</span>
+<span class="kw">DROP TABLE</span> Jugador;
+<span class="kw">DROP TABLE</span> Club;
+
+<span class="cmt">-- Versión segura (no falla si no existe)</span>
+<span class="kw">DROP TABLE IF EXISTS</span> Jugador;</pre>
+  </div>
+  <div class="callout warn">
+    <span class="callout-icon">⚠️</span>
+    <div>No se puede eliminar una tabla que tenga <strong>FOREIGN KEY apuntando a ella</strong> desde otra tabla activa. Primero hay que eliminar la tabla dependiente.</div>
+  </div>
+</div>
+
+<div class="divider"></div>
+
+<!-- ══════════════════════════════════
+     DML
+══════════════════════════════════ -->
+<div class="section-header dml" id="dml">
+  <span class="section-tag dml">DML</span>
+  <h2>Data Manipulation Language</h2>
+</div>
+
+<p style="color:var(--muted); margin-bottom:1.4rem;">El DML opera sobre la <strong style="color:var(--text)">instancia</strong> de la base de datos: inserta, modifica y elimina <strong style="color:var(--text)">filas (tuplas)</strong> en las tablas. Trabaja sobre los datos, no sobre la estructura.</p>
+
+<div class="card">
+  <p style="color:var(--muted)">Los tres comandos principales del DML:</p>
+  <div class="two-col">
+    <div>
+      <div style="display:flex;gap:.5rem;align-items:center;margin-bottom:.4rem">
+        <span style="background:var(--dml-dim);color:var(--dml);font-family:'JetBrains Mono',monospace;font-size:.78rem;padding:.2rem .6rem;border-radius:4px;font-weight:700">INSERT</span>
+        <span style="color:var(--muted);font-size:.85rem">Agrega nuevas filas</span>
+      </div>
+      <div style="display:flex;gap:.5rem;align-items:center;margin-bottom:.4rem">
+        <span style="background:var(--dml-dim);color:var(--dml);font-family:'JetBrains Mono',monospace;font-size:.78rem;padding:.2rem .6rem;border-radius:4px;font-weight:700">UPDATE</span>
+        <span style="color:var(--muted);font-size:.85rem">Modifica filas existentes</span>
+      </div>
+      <div style="display:flex;gap:.5rem;align-items:center">
+        <span style="background:var(--dml-dim);color:var(--dml);font-family:'JetBrains Mono',monospace;font-size:.78rem;padding:.2rem .6rem;border-radius:4px;font-weight:700">DELETE</span>
+        <span style="color:var(--muted);font-size:.85rem">Elimina filas existentes</span>
+      </div>
+    </div>
+    <div class="callout info" style="margin:0">
+      <span class="callout-icon">🔑</span>
+      <div>DDL modifica el <strong>esquema</strong> (estructura). DML modifica la <strong>instancia</strong> (datos).</div>
+    </div>
+  </div>
+</div>
+
+<!-- INSERT -->
+<div class="section-header dml" id="insert" style="margin-top:2.5rem">
+  <span class="section-tag dml">DML</span>
+  <h2>INSERT</h2>
+</div>
+
+<div class="card">
+  <h3><span class="cmd dml">INSERT</span> — Sintaxis</h3>
+  <div class="code-wrap">
+    <div class="code-label">sintaxis</div>
+    <pre><span class="kw">INSERT INTO</span> &lt;nombre_tabla&gt; (col1, col2, ..., colN)
+<span class="kw">VALUES</span> (val1, val2, ..., valN);</pre>
+  </div>
+</div>
+
+<div class="card">
+  <h3>Ejemplos de <span class="cmd dml">INSERT</span></h3>
+  <div class="tabs">
+    <button class="tab-btn active" onclick="switchTab(this,'t3a')">Una fila</button>
+    <button class="tab-btn" onclick="switchTab(this,'t3b')">Múltiples filas</button>
+    <button class="tab-btn" onclick="switchTab(this,'t3c')">Con NULL implícito</button>
+    <button class="tab-btn" onclick="switchTab(this,'t3d')">Sin columnas</button>
+  </div>
+  <div id="t3a" class="tab-panel active">
+    <div class="code-wrap">
+      <pre><span class="cmt">-- Insertar un elemento en la tabla elementos</span>
+<span class="kw">INSERT INTO</span> elementos (simbolo, nombre)
+<span class="kw">VALUES</span> (<span class="str">'H'</span>, <span class="str">'Hidrógeno'</span>);
+
+<span class="cmt">-- Insertar una persona</span>
+<span class="kw">INSERT INTO</span> Persona (id_usuario, cedula, nombre, apellido, calle)
+<span class="kw">VALUES</span> (<span class="num">1</span>, <span class="num">12345678</span>, <span class="str">'Ana'</span>, <span class="str">'García'</span>, <span class="str">'Av. Italia'</span>);</pre>
+    </div>
+  </div>
+  <div id="t3b" class="tab-panel">
+    <div class="code-wrap">
+      <pre><span class="cmt">-- Insertar varias filas en una sola sentencia</span>
+<span class="kw">INSERT INTO</span> elementos (simbolo, nombre)
+<span class="kw">VALUES</span>
+    (<span class="str">'H'</span>,  <span class="str">'Hidrógeno'</span>),
+    (<span class="str">'He'</span>, <span class="str">'Helio'</span>),
+    (<span class="str">'Li'</span>, <span class="str">'Litio'</span>),
+    (<span class="str">'C'</span>,  <span class="str">'Carbono'</span>);</pre>
+    </div>
+    <div class="callout tip"><span class="callout-icon">⚡</span><div>Insertar múltiples filas en una sola sentencia es más eficiente que hacer varios <code>INSERT</code> individuales.</div></div>
+  </div>
+  <div id="t3c" class="tab-panel">
+    <div class="code-wrap">
+      <pre><span class="cmt">-- Si se omite una columna, queda NULL en ese campo</span>
+<span class="kw">INSERT INTO</span> Persona (id_usuario, cedula, nombre, apellido)
+<span class="kw">VALUES</span> (<span class="num">2</span>, <span class="num">87654321</span>, <span class="str">'Luis'</span>, <span class="str">'Pérez'</span>);
+
+<span class="cmt">-- Equivalente a:</span>
+<span class="kw">INSERT INTO</span> Persona (id_usuario, cedula, nombre, apellido, calle, nro_puerta, apto)
+<span class="kw">VALUES</span> (<span class="num">2</span>, <span class="num">87654321</span>, <span class="str">'Luis'</span>, <span class="str">'Pérez'</span>, <span class="kw">NULL</span>, <span class="kw">NULL</span>, <span class="kw">NULL</span>);</pre>
+    </div>
+    <div class="callout warn"><span class="callout-icon">⚠️</span><div>Si una columna tiene <code>NOT NULL</code> y la omitís, el motor rechazará la inserción con un error.</div></div>
+  </div>
+  <div id="t3d" class="tab-panel">
+    <div class="code-wrap">
+      <pre><span class="cmt">-- Sin especificar columnas: hay que respetar el orden de la tabla</span>
+<span class="kw">INSERT INTO</span> elementos
+<span class="kw">VALUES</span> (<span class="str">'O'</span>, <span class="str">'Oxígeno'</span>);
+
+<span class="cmt">-- ❌ Práctica NO recomendada: si cambia el orden de columnas, falla</span></pre>
+    </div>
+    <div class="callout warn"><span class="callout-icon">💡</span><div><strong>Buena práctica:</strong> especificar siempre las columnas en el <code>INSERT</code>. Hace el código más legible y resistente a cambios de esquema.</div></div>
+  </div>
+</div>
+
+<!-- UPDATE -->
+<div class="section-header dml" id="update" style="margin-top:2.5rem">
+  <span class="section-tag dml">DML</span>
+  <h2>UPDATE</h2>
+</div>
+
+<div class="card">
+  <h3><span class="cmd dml">UPDATE</span> — Sintaxis</h3>
+  <div class="code-wrap">
+    <div class="code-label">sintaxis</div>
+    <pre><span class="kw">UPDATE</span> &lt;nombre_tabla&gt;
+<span class="kw">SET</span> col1 = val1, col2 = val2, ..., colN = valN
+<span class="kw">WHERE</span> &lt;predicado&gt;;</pre>
+  </div>
+  <div class="callout info">
+    <span class="callout-icon">ℹ️</span>
+    <div><strong>Todas las filas que cumplan el predicado</strong> serán modificadas simultáneamente. Si el predicado coincide con 100 filas, las 100 se actualizan.</div>
+  </div>
+</div>
+
+<div class="card">
+  <h3>Ejemplos de <span class="cmd dml">UPDATE</span></h3>
+  <div class="tabs">
+    <button class="tab-btn active" onclick="switchTab(this,'t4a')">Por valor</button>
+    <button class="tab-btn" onclick="switchTab(this,'t4b')">Múltiples columnas</button>
+    <button class="tab-btn" onclick="switchTab(this,'t4c')">Por rango</button>
+    <button class="tab-btn" onclick="switchTab(this,'t4d')">Con IS NULL</button>
+  </div>
+  <div id="t4a" class="tab-panel active">
+    <div class="code-wrap">
+      <pre><span class="cmt">-- Corregir tilde en nombre</span>
+<span class="kw">UPDATE</span> elementos
+<span class="kw">SET</span> nombre = <span class="str">'Hidrógeno'</span>
+<span class="kw">WHERE</span> nombre = <span class="str">'Hidrogeno'</span>;
+
+<span class="cmt">-- Actualizar dirección de una persona por su ID</span>
+<span class="kw">UPDATE</span> Persona
+<span class="kw">SET</span> calle = <span class="str">'Bvar. Artigas'</span>, nro_puerta = <span class="str">'1234'</span>
+<span class="kw">WHERE</span> id_usuario = <span class="num">1</span>;</pre>
+    </div>
+  </div>
+  <div id="t4b" class="tab-panel">
+    <div class="code-wrap">
+      <pre><span class="cmt">-- Modificar precio y stock de un producto</span>
+<span class="kw">UPDATE</span> Producto
+<span class="kw">SET</span> precio = <span class="num">299.90</span>,
+    stock  = stock + <span class="num">50</span>
+<span class="kw">WHERE</span> id_producto = <span class="num">5</span>;
+
+<span class="cmt">-- Aplicar descuento del 10% a una categoría</span>
+<span class="kw">UPDATE</span> Producto
+<span class="kw">SET</span> precio = precio * <span class="num">0.90</span>
+<span class="kw">WHERE</span> categoria = <span class="str">'Electrónica'</span>;</pre>
+    </div>
+  </div>
+  <div id="t4c" class="tab-panel">
+    <div class="code-wrap">
+      <pre><span class="cmt">-- Marcar como inactivos los productos con poco stock</span>
+<span class="kw">UPDATE</span> Producto
+<span class="kw">SET</span> activo = <span class="num">FALSE</span>
+<span class="kw">WHERE</span> stock <span class="kw">BETWEEN</span> <span class="num">0</span> <span class="kw">AND</span> <span class="num">5</span>;
+
+<span class="cmt">-- Actualizar pedidos de un período</span>
+<span class="kw">UPDATE</span> Pedido
+<span class="kw">SET</span> estado = <span class="str">'archivado'</span>
+<span class="kw">WHERE</span> fecha <span class="kw">BETWEEN</span> <span class="str">'2023-01-01'</span> <span class="kw">AND</span> <span class="str">'2023-12-31'</span>;</pre>
+    </div>
+  </div>
+  <div id="t4d" class="tab-panel">
+    <div class="code-wrap">
+      <pre><span class="cmt">-- Asignar ciudad por defecto a quienes no tienen</span>
+<span class="kw">UPDATE</span> Persona
+<span class="kw">SET</span> Ciudad = <span class="str">'Montevideo'</span>
+<span class="kw">WHERE</span> Ciudad <span class="kw">IS NULL</span>;
+
+<span class="cmt">-- Quitar un email (poner NULL) para un usuario</span>
+<span class="kw">UPDATE</span> Cliente
+<span class="kw">SET</span> email = <span class="kw">NULL</span>
+<span class="kw">WHERE</span> id_cliente = <span class="num">10</span>;</pre>
+    </div>
+  </div>
+</div>
+
+<div class="card">
+  <h3>Predicados en el <code style="color:var(--dml)">WHERE</code></h3>
+  <p>El predicado filtra qué filas se verán afectadas. Puede combinar varias condiciones:</p>
+  <div class="pred-grid">
+    <div class="pred-chip"><span>=  &lt;  &gt;  &lt;&gt;</span><small>Comparación simple</small></div>
+    <div class="pred-chip"><span>BETWEEN</span><small>Rango de valores</small></div>
+    <div class="pred-chip"><span>LIKE</span><small>Expresión regular</small></div>
+    <div class="pred-chip"><span>IS NULL</span><small>Comparar con null</small></div>
+    <div class="pred-chip"><span>IS NOT NULL</span><small>No es null</small></div>
+    <div class="pred-chip"><span>AND / OR / NOT</span><small>Lógica booleana</small></div>
+    <div class="pred-chip"><span>IN (...)</span><small>Lista de valores</small></div>
+  </div>
+  <div class="code-wrap" style="margin-top:.8rem">
+    <pre><span class="cmt">-- Ejemplos combinados</span>
+<span class="kw">UPDATE</span> Persona
+<span class="kw">SET</span> activo = <span class="num">FALSE</span>
+<span class="kw">WHERE</span> apellido <span class="kw">LIKE</span> <span class="str">'Garc%'</span> <span class="kw">AND</span> Ciudad <span class="kw">IS NOT NULL</span>;
+
+<span class="kw">UPDATE</span> Producto
+<span class="kw">SET</span> precio = precio * <span class="num">1.05</span>
+<span class="kw">WHERE</span> id_producto <span class="kw">IN</span> (<span class="num">3</span>, <span class="num">7</span>, <span class="num">12</span>);</pre>
+  </div>
+</div>
+
+<!-- DELETE -->
+<div class="section-header dml" id="delete" style="margin-top:2.5rem">
+  <span class="section-tag dml">DML</span>
+  <h2>DELETE</h2>
+</div>
+
+<div class="card">
+  <h3><span class="cmd dml">DELETE</span> — Sintaxis</h3>
+  <div class="code-wrap">
+    <div class="code-label">sintaxis</div>
+    <pre><span class="kw">DELETE FROM</span> &lt;nombre_tabla&gt;
+<span class="kw">WHERE</span> &lt;predicado&gt;;</pre>
+  </div>
+</div>
+
+<div class="card">
+  <h3>Ejemplos de <span class="cmd dml">DELETE</span></h3>
+  <div class="tabs">
+    <button class="tab-btn active" onclick="switchTab(this,'t5a')">Por valor</button>
+    <button class="tab-btn" onclick="switchTab(this,'t5b')">Por fecha</button>
+    <button class="tab-btn" onclick="switchTab(this,'t5c')">Combinado</button>
+  </div>
+  <div id="t5a" class="tab-panel active">
+    <div class="code-wrap">
+      <pre><span class="cmt">-- Eliminar un elemento por su símbolo</span>
+<span class="kw">DELETE FROM</span> elementos
+<span class="kw">WHERE</span> simbolo = <span class="str">'H'</span>;
+
+<span class="cmt">-- Eliminar un cliente por ID</span>
+<span class="kw">DELETE FROM</span> Cliente
+<span class="kw">WHERE</span> id_cliente = <span class="num">7</span>;</pre>
+    </div>
+  </div>
+  <div id="t5b" class="tab-panel">
+    <div class="code-wrap">
+      <pre><span class="cmt">-- Eliminar movimientos anteriores a una fecha</span>
+<span class="kw">DELETE FROM</span> movimientos
+<span class="kw">WHERE</span> fecha_mov &lt; <span class="str">'2002-05-15'</span>;
+
+<span class="cmt">-- Eliminar pedidos del año pasado</span>
+<span class="kw">DELETE FROM</span> Pedido
+<span class="kw">WHERE</span> fecha <span class="kw">BETWEEN</span> <span class="str">'2023-01-01'</span> <span class="kw">AND</span> <span class="str">'2023-12-31'</span>;</pre>
+    </div>
+  </div>
+  <div id="t5c" class="tab-panel">
+    <div class="code-wrap">
+      <pre><span class="cmt">-- Eliminar productos inactivos sin stock</span>
+<span class="kw">DELETE FROM</span> Producto
+<span class="kw">WHERE</span> activo = <span class="num">FALSE</span> <span class="kw">AND</span> stock = <span class="num">0</span>;
+
+<span class="cmt">-- Eliminar personas sin dirección ni ciudad</span>
+<span class="kw">DELETE FROM</span> Persona
+<span class="kw">WHERE</span> calle <span class="kw">IS NULL</span> <span class="kw">AND</span> Ciudad <span class="kw">IS NULL</span>;</pre>
+    </div>
+  </div>
+</div>
+
+<!-- CUIDADO -->
+<div class="section-header dml" id="cuidado" style="margin-top:2.5rem; border-color:var(--warn)">
+  <span class="section-tag dml" style="background:#3d1212; color:var(--warn)">⚠ CUIDADO</span>
+  <h2>UPDATE y DELETE sin WHERE</h2>
+</div>
+
+<div class="card" style="border-color:var(--warn)">
+  <h3>El predicado vacío aplica a <em>todas</em> las filas</h3>
+  <p>Si omitís el <code>WHERE</code>, el comando afecta <strong>absolutamente todas las filas</strong> de la tabla.</p>
+  <div class="two-col">
+    <div>
+      <p style="color:var(--warn); font-family:'JetBrains Mono',monospace; font-size:.75rem; margin-bottom:.4rem">❌ PELIGROSO</p>
+      <div class="code-wrap">
+        <pre><span class="cmt">-- Sobreescribe TODOS los símbolos</span>
+<span class="kw">UPDATE</span> elementos
+<span class="kw">SET</span> simbolo = <span class="str">'H'</span>;
+
+<span class="cmt">-- Elimina TODA la tabla</span>
+<span class="kw">DELETE FROM</span> elementos;</pre>
+      </div>
+    </div>
+    <div>
+      <p style="color:var(--ddl); font-family:'JetBrains Mono',monospace; font-size:.75rem; margin-bottom:.4rem">✅ CORRECTO</p>
+      <div class="code-wrap">
+        <pre><span class="cmt">-- Solo actualiza el que corresponde</span>
+<span class="kw">UPDATE</span> elementos
+<span class="kw">SET</span> simbolo = <span class="str">'H'</span>
+<span class="kw">WHERE</span> nombre = <span class="str">'Hidrógeno'</span>;
+
+<span class="cmt">-- Solo elimina el que corresponde</span>
+<span class="kw">DELETE FROM</span> elementos
+<span class="kw">WHERE</span> simbolo = <span class="str">'H'</span>;</pre>
+      </div>
+    </div>
+  </div>
+  <div class="callout warn" style="margin-top:1rem">
+    <span class="callout-icon">🔥</span>
+    <div><strong>Regla de oro:</strong> antes de ejecutar un <code>UPDATE</code> o <code>DELETE</code>, probá primero el predicado con un <code>SELECT</code> para verificar qué filas afectaría. Así evitás pérdidas de datos irreversibles.</div>
+  </div>
+  <div class="code-wrap" style="margin-top:.8rem">
+    <div class="code-label">tip: probar primero</div>
+    <pre><span class="cmt">-- 1. Primero verificar con SELECT</span>
+<span class="kw">SELECT</span> * <span class="kw">FROM</span> elementos
+<span class="kw">WHERE</span> simbolo = <span class="str">'H'</span>;
+
+<span class="cmt">-- 2. Si el resultado es el esperado, entonces ejecutar</span>
+<span class="kw">DELETE FROM</span> elementos
+<span class="kw">WHERE</span> simbolo = <span class="str">'H'</span>;</pre>
+  </div>
+</div>
+
+<!-- SUMMARY -->
+<div class="summary">
+  <h3>Resumen de comandos</h3>
+  <div class="summary-grid">
+    <div class="summary-item">
+      <div class="cmd-name ddl">CREATE TABLE</div>
+      <p>Crea una tabla nueva con columnas y restricciones</p>
+    </div>
+    <div class="summary-item">
+      <div class="cmd-name ddl">ALTER TABLE</div>
+      <p>Modifica la estructura de una tabla existente</p>
+    </div>
+    <div class="summary-item">
+      <div class="cmd-name ddl">DROP TABLE</div>
+      <p>Elimina una tabla y todos sus datos</p>
+    </div>
+    <div class="summary-item">
+      <div class="cmd-name dml">INSERT</div>
+      <p>Agrega nuevas filas a una tabla</p>
+    </div>
+    <div class="summary-item">
+      <div class="cmd-name dml">UPDATE</div>
+      <p>Modifica filas existentes que cumplen un predicado</p>
+    </div>
+    <div class="summary-item">
+      <div class="cmd-name dml">DELETE</div>
+      <p>Elimina filas que cumplen un predicado</p>
+    </div>
+  </div>
+</div>
+
+</main>
+
+<script>
+function switchTab(btn, panelId) {
+  const card = btn.closest('.card');
+  card.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+  card.querySelectorAll('.tab-panel').forEach(p => p.classList.remove('active'));
+  btn.classList.add('active');
+  document.getElementById(panelId).classList.add('active');
+}
+</script>
+</body>
+</html>
