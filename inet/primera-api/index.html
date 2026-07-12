@@ -1,0 +1,755 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Primera API en PHP — Laboratorio de Programación</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Syne:wght@600;700;800&family=JetBrains+Mono:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --bg: #0a0f14;
+    --bg-raised: #10171f;
+    --bg-card: #131b24;
+    --line: #202b36;
+    --text: #dfe6ec;
+    --text-dim: #8493a1;
+    --text-faint: #56636f;
+
+    /* signature triad: codificación por familia de estado HTTP */
+    --ok: #4ade80;      /* 2xx */
+    --ok-dim: #16281e;
+    --warn: #fbbf24;    /* 4xx */
+    --warn-dim: #2b220f;
+    --err: #f87171;     /* 5xx */
+    --err-dim: #2a1616;
+
+    --accent: #4ade80;
+    --accent-soft: #4ade8022;
+
+    --layer-config: #a78bfa;
+    --layer-conexion: #38bdf8;
+    --layer-controller: #fb923c;
+    --layer-index: #4ade80;
+  }
+
+  *{box-sizing:border-box;}
+  html{scroll-behavior:smooth;}
+  body{
+    margin:0;
+    background:
+      radial-gradient(1200px 600px at 15% -10%, #132b1f33, transparent 60%),
+      radial-gradient(900px 500px at 100% 0%, #1a2a3a44, transparent 55%),
+      var(--bg);
+    color:var(--text);
+    font-family:'JetBrains Mono', monospace;
+    line-height:1.65;
+    -webkit-font-smoothing:antialiased;
+  }
+  h1,h2,h3,.display{ font-family:'Syne', sans-serif; }
+
+  ::selection{ background:var(--accent-soft); color:#fff; }
+
+  a{ color:inherit; }
+
+  .noselect{
+    user-select:none;
+    -webkit-user-select:none;
+    -webkit-touch-callout:none;
+  }
+
+  /* ---------- HERO ---------- */
+  .hero{
+    max-width:980px;
+    margin:0 auto;
+    padding:72px 28px 40px;
+  }
+  .eyebrow{
+    display:inline-flex;
+    align-items:center;
+    gap:8px;
+    font-size:12.5px;
+    letter-spacing:.12em;
+    text-transform:uppercase;
+    color:var(--ok);
+    background:var(--ok-dim);
+    border:1px solid #2c4a36;
+    padding:6px 12px;
+    border-radius:999px;
+  }
+  .eyebrow .dot{
+    width:6px;height:6px;border-radius:50%;
+    background:var(--ok);
+    box-shadow:0 0 8px var(--ok);
+  }
+  .hero h1{
+    font-size:clamp(34px, 5vw, 54px);
+    font-weight:800;
+    line-height:1.05;
+    margin:22px 0 14px;
+    letter-spacing:-0.01em;
+  }
+  .hero h1 span{ color:var(--ok); }
+  .hero p.lead{
+    color:var(--text-dim);
+    font-size:16px;
+    max-width:640px;
+    margin:0 0 22px;
+  }
+  .hero-note{
+    border-left:3px solid var(--warn);
+    background:var(--warn-dim);
+    padding:14px 18px;
+    border-radius:6px;
+    font-size:13.5px;
+    color:#e8d6a8;
+    max-width:640px;
+  }
+  .hero-note b{ color:var(--warn); }
+
+  /* ---------- TABS ---------- */
+  .tabs-wrap{
+    position:sticky;
+    top:0;
+    z-index:50;
+    background:rgba(10,15,20,0.92);
+    backdrop-filter:blur(10px);
+    border-bottom:1px solid var(--line);
+  }
+  .tabs{
+    max-width:980px;
+    margin:0 auto;
+    display:flex;
+    gap:4px;
+    overflow-x:auto;
+    padding:0 20px;
+    scrollbar-width:thin;
+  }
+  .tabs::-webkit-scrollbar{ height:4px; }
+  .tabs::-webkit-scrollbar-thumb{ background:var(--line); border-radius:4px; }
+  .tab-btn{
+    flex:0 0 auto;
+    background:none;
+    border:none;
+    color:var(--text-faint);
+    font-family:'JetBrains Mono', monospace;
+    font-size:12.5px;
+    font-weight:600;
+    letter-spacing:.03em;
+    padding:16px 14px;
+    cursor:pointer;
+    border-bottom:2px solid transparent;
+    white-space:nowrap;
+    transition:color .15s ease, border-color .15s ease;
+  }
+  .tab-btn:hover{ color:var(--text); }
+  .tab-btn.active{ color:var(--ok); border-bottom-color:var(--ok); }
+
+  /* ---------- MAIN ---------- */
+  main{
+    max-width:980px;
+    margin:0 auto;
+    padding:40px 28px 100px;
+  }
+  .panel{ display:none; animation:fade .25s ease; }
+  .panel.active{ display:block; }
+  @keyframes fade{ from{opacity:0; transform:translateY(6px);} to{opacity:1; transform:translateY(0);} }
+
+  .panel h2{
+    font-size:26px;
+    font-weight:700;
+    margin:0 0 6px;
+  }
+  .panel .subtitle{
+    color:var(--text-dim);
+    font-size:14px;
+    margin:0 0 30px;
+  }
+  .panel p{ color:#c3ccd4; font-size:14.5px; }
+  .panel ul, .panel ol{ color:#c3ccd4; font-size:14.5px; padding-left:20px; }
+  .panel li{ margin-bottom:8px; }
+  code.inline{
+    background:#1a2430;
+    border:1px solid var(--line);
+    color:#a5f3c8;
+    padding:2px 7px;
+    border-radius:4px;
+    font-size:13px;
+  }
+
+  .card{
+    background:var(--bg-card);
+    border:1px solid var(--line);
+    border-radius:12px;
+    padding:24px;
+    margin-bottom:24px;
+  }
+  .card h3{
+    font-size:16px;
+    margin:0 0 10px;
+    display:flex;
+    align-items:center;
+    gap:10px;
+  }
+
+  /* layer chips for architecture */
+  .layer-chip{
+    display:inline-flex;
+    align-items:center;
+    gap:6px;
+    font-size:11px;
+    text-transform:uppercase;
+    letter-spacing:.08em;
+    padding:3px 9px;
+    border-radius:999px;
+    font-weight:700;
+  }
+  .layer-chip .sq{ width:7px; height:7px; border-radius:2px; }
+  .lc-config{ background:#a78bfa1a; color:var(--layer-config); border:1px solid #a78bfa33; }
+  .lc-conexion{ background:#38bdf81a; color:var(--layer-conexion); border:1px solid #38bdf833; }
+  .lc-controller{ background:#fb923c1a; color:var(--layer-controller); border:1px solid #fb923c33; }
+  .lc-index{ background:#4ade801a; color:var(--layer-index); border:1px solid #4ade8033; }
+
+  /* file structure diagram */
+  .arch{
+    display:flex;
+    flex-direction:column;
+    gap:10px;
+  }
+  .arch-row{
+    display:flex;
+    align-items:center;
+    gap:14px;
+    background:var(--bg-raised);
+    border:1px solid var(--line);
+    border-radius:8px;
+    padding:14px 16px;
+    position:relative;
+  }
+  .arch-row .bar{
+    width:4px;
+    align-self:stretch;
+    border-radius:3px;
+    flex:0 0 auto;
+  }
+  .arch-row .file{
+    font-weight:700;
+    font-size:14px;
+    color:#fff;
+    min-width:190px;
+  }
+  .arch-row .desc{
+    font-size:13px;
+    color:var(--text-dim);
+  }
+  .arch-arrow{
+    text-align:center;
+    color:var(--text-faint);
+    font-size:13px;
+    margin:0;
+  }
+
+  /* image frame — non-copyable, mirrors the source screenshots */
+  .shot{
+    border-radius:12px;
+    overflow:hidden;
+    border:1px solid var(--line);
+    margin:14px 0 22px;
+    background:#0d1319;
+  }
+  .shot img{
+    display:block;
+    width:100%;
+    height:auto;
+    pointer-events:none;
+  }
+  .shot-caption{
+    font-size:12px;
+    color:var(--text-faint);
+    text-align:center;
+    margin-top:-10px;
+    margin-bottom:22px;
+    letter-spacing:.03em;
+  }
+
+  /* status code cards */
+  .codes-grid{
+    display:grid;
+    grid-template-columns:repeat(auto-fit, minmax(230px, 1fr));
+    gap:16px;
+  }
+  .code-card{
+    border-radius:10px;
+    padding:18px;
+    border:1px solid var(--line);
+    background:var(--bg-raised);
+  }
+  .code-card .num{
+    font-family:'Syne', sans-serif;
+    font-size:30px;
+    font-weight:800;
+    line-height:1;
+  }
+  .code-card .label{
+    font-size:12px;
+    letter-spacing:.05em;
+    text-transform:uppercase;
+    color:var(--text-dim);
+    margin:6px 0 12px;
+  }
+  .code-card p{ font-size:13px; margin:0; color:#b7c1ca; }
+  .code-card code.inline{ font-size:12px; }
+  .cc-2xx .num{ color:var(--ok); }
+  .cc-4xx .num{ color:var(--warn); }
+  .cc-5xx .num{ color:var(--err); }
+  .cc-2xx{ border-top:3px solid var(--ok); }
+  .cc-4xx{ border-top:3px solid var(--warn); }
+  .cc-5xx{ border-top:3px solid var(--err); }
+
+  .req-flow{
+    display:flex;
+    flex-wrap:wrap;
+    gap:10px;
+    align-items:center;
+    margin:20px 0 10px;
+  }
+  .req-step{
+    background:var(--bg-raised);
+    border:1px solid var(--line);
+    border-radius:8px;
+    padding:10px 14px;
+    font-size:12.5px;
+    font-weight:600;
+  }
+  .req-step.method{ color:var(--ok); border-color:#2c4a36; }
+  .req-arrow{ color:var(--text-faint); }
+
+  /* challenge / student box */
+  .challenge{
+    border:1px dashed #fb923c55;
+    background:linear-gradient(180deg, #fb923c0d, transparent);
+    border-radius:12px;
+    padding:24px;
+    margin-top:10px;
+  }
+  .challenge .tag{
+    display:inline-block;
+    font-size:11px;
+    font-weight:700;
+    letter-spacing:.08em;
+    text-transform:uppercase;
+    color:#fb923c;
+    background:#fb923c1a;
+    border:1px solid #fb923c33;
+    padding:4px 10px;
+    border-radius:999px;
+    margin-bottom:14px;
+  }
+  .challenge ol{ margin:0; padding-left:20px; }
+  .challenge li{ margin-bottom:12px; color:#dfe0e0; }
+  .challenge li b{ color:#fff; }
+
+  table.ref{
+    width:100%;
+    border-collapse:collapse;
+    font-size:13px;
+    margin-top:14px;
+  }
+  table.ref th, table.ref td{
+    text-align:left;
+    padding:10px 12px;
+    border-bottom:1px solid var(--line);
+  }
+  table.ref th{
+    color:var(--text-faint);
+    font-weight:600;
+    text-transform:uppercase;
+    font-size:11px;
+    letter-spacing:.05em;
+  }
+  table.ref td code.inline{ font-size:12px; }
+
+  footer{
+    max-width:980px;
+    margin:0 auto;
+    padding:30px 28px 60px;
+    color:var(--text-faint);
+    font-size:12px;
+    border-top:1px solid var(--line);
+  }
+
+  @media (max-width:640px){
+    .hero{ padding:50px 18px 30px; }
+    main{ padding:30px 18px 80px; }
+    .arch-row{ flex-wrap:wrap; }
+    .arch-row .file{ min-width:auto; }
+  }
+</style>
+</head>
+<body>
+
+<div class="hero">
+  <span class="eyebrow"><span class="dot"></span>Laboratorio de Programación · INET</span>
+  <h1>Primera versión de una <span>API</span> en PHP</h1>
+  <p class="lead">
+    Cómo armar, paso a paso, un endpoint capaz de recibir peticiones HTTP, hablar con la base de datos
+    y devolver JSON. Sin capas de más: lo justo para entender qué está pasando en cada línea.
+  </p>
+  <div class="hero-note">
+    <b>Nota:</b> esta es una primera versión pensada para aprender. No incluye un sistema de ruteo
+    (eso llega más adelante) y no es la forma "definitiva" ni 100% correcta de resolverlo en producción —
+    es un escalón más en la construcción del conocimiento.
+  </div>
+</div>
+
+<div class="tabs-wrap">
+  <div class="tabs" id="tabs">
+    <button class="tab-btn active" data-tab="intro">Resumen</button>
+    <button class="tab-btn" data-tab="estructura">Estructura</button>
+    <button class="tab-btn" data-tab="bd">Base de Datos</button>
+    <button class="tab-btn" data-tab="config">config.php</button>
+    <button class="tab-btn" data-tab="conexion">conexion.php</button>
+    <button class="tab-btn" data-tab="controller">PersonaController.php</button>
+    <button class="tab-btn" data-tab="indexphp">index.php</button>
+    <button class="tab-btn" data-tab="postman">Probando con Postman</button>
+    <button class="tab-btn" data-tab="codigos">Códigos de Respuesta</button>
+    <button class="tab-btn" data-tab="desafio">Desafío</button>
+  </div>
+</div>
+
+<main>
+
+  <!-- RESUMEN -->
+  <section class="panel active" id="intro">
+    <h2>¿Qué vamos a construir?</h2>
+    <p class="subtitle">Una API mínima para el recurso <code class="inline">personas</code></p>
+
+    <div class="card">
+      <h3>La idea de fondo</h3>
+      <p>
+        Una API, en este contexto, es simplemente un archivo PHP que recibe una petición HTTP,
+        la interpreta según su método (<code class="inline">GET</code>, <code class="inline">POST</code>, etc.)
+        y responde con datos en formato JSON. No hay HTML de por medio: el cliente (en este caso, Postman)
+        envía la petición, y el servidor contesta con información pura para que otro sistema la consuma.
+      </p>
+      <p>
+        En esta primera vuelta vamos a poder <b>listar personas</b>, <b>consultar una persona por id</b>
+        y <b>crear una persona nueva</b>. Todo con cuatro archivos chicos, cada uno con una responsabilidad
+        clara.
+      </p>
+    </div>
+
+    <div class="req-flow">
+      <div class="req-step">Postman</div>
+      <div class="req-arrow">→</div>
+      <div class="req-step">index.php</div>
+      <div class="req-arrow">→</div>
+      <div class="req-step">PersonaController.php</div>
+      <div class="req-arrow">→</div>
+      <div class="req-step">conexion.php</div>
+      <div class="req-arrow">→</div>
+      <div class="req-step">MySQL</div>
+    </div>
+
+    <div class="card" style="margin-top:24px;">
+      <h3>Lo que queda deliberadamente afuera</h3>
+      <ul>
+        <li>No hay un sistema de rutas: cada petición cae siempre en <code class="inline">index.php</code>, y ahí se decide qué hacer según el método HTTP.</li>
+        <li>No se valida en profundidad lo que llega del cliente (más allá de comprobar que el JSON sea válido).</li>
+        <li>No hay operaciones de actualización ni borrado todavía — eso queda como desafío al final.</li>
+      </ul>
+    </div>
+  </section>
+
+  <!-- ESTRUCTURA -->
+  <section class="panel" id="estructura">
+    <h2>Estructura de archivos</h2>
+    <p class="subtitle">Cada capa depende solo de la que tiene debajo</p>
+
+    <div class="arch">
+      <div class="arch-row">
+        <div class="bar" style="background:var(--layer-index)"></div>
+        <div class="file">index.php</div>
+        <div class="desc">Punto de entrada. Lee el método HTTP y decide a qué método del controlador llamar.</div>
+        <span class="layer-chip lc-index"><span class="sq" style="background:var(--layer-index)"></span>Entrada</span>
+      </div>
+      <p class="arch-arrow">↓ requiere</p>
+      <div class="arch-row">
+        <div class="bar" style="background:var(--layer-controller)"></div>
+        <div class="file">PersonaController.php</div>
+        <div class="desc">Contiene la lógica: qué hacer con un GET, qué hacer con un POST.</div>
+        <span class="layer-chip lc-controller"><span class="sq" style="background:var(--layer-controller)"></span>Controlador</span>
+      </div>
+      <p class="arch-arrow">↓ requiere</p>
+      <div class="arch-row">
+        <div class="bar" style="background:var(--layer-conexion)"></div>
+        <div class="file">conexion.php</div>
+        <div class="desc">Abre la conexión PDO hacia MySQL y la entrega lista para usar.</div>
+        <span class="layer-chip lc-conexion"><span class="sq" style="background:var(--layer-conexion)"></span>Conexión</span>
+      </div>
+      <p class="arch-arrow">↓ requiere</p>
+      <div class="arch-row">
+        <div class="bar" style="background:var(--layer-config)"></div>
+        <div class="file">config.php</div>
+        <div class="desc">Guarda las constantes de acceso: host, base de datos, usuario y contraseña.</div>
+        <span class="layer-chip lc-config"><span class="sq" style="background:var(--layer-config)"></span>Config</span>
+      </div>
+    </div>
+
+    <div class="card" style="margin-top:24px;">
+      <h3>¿Por qué separar así?</h3>
+      <p>
+        Cada archivo hace una sola cosa. Si mañana cambia el usuario de la base de datos, se toca
+        <code class="inline">config.php</code> y nada más. Si cambia la lógica de negocio, se toca el
+        controlador. Es una forma simple de organizar el código antes de pasar a un framework o a un
+        sistema de rutas más elaborado.
+      </p>
+    </div>
+  </section>
+
+  <!-- BASE DE DATOS -->
+  <section class="panel" id="bd">
+    <h2>Base de datos</h2>
+    <p class="subtitle">Una tabla simple para arrancar</p>
+
+    <div class="shot noselect">
+      <img src="img/BD_-_Tabla.png" alt="Script SQL de creación de base de datos y tabla personas" draggable="false">
+    </div>
+    <p class="shot-caption">Ejecutar en phpMyAdmin o en la consola de MySQL antes de tocar código PHP</p>
+
+    <div class="card">
+      <h3>Qué hace este script</h3>
+      <ul>
+        <li><code class="inline">CREATE DATABASE</code> crea la base <code class="inline">api_ejemplo</code>.</li>
+        <li><code class="inline">USE</code> indica que las siguientes instrucciones trabajan sobre esa base.</li>
+        <li>La tabla <code class="inline">personas</code> tiene un <code class="inline">id</code> autoincremental como clave primaria, un <code class="inline">nombre</code> y una <code class="inline">edad</code>.</li>
+      </ul>
+      <p>Con esto ya hay un lugar real donde guardar y leer datos desde PHP.</p>
+    </div>
+  </section>
+
+  <!-- CONFIG -->
+  <section class="panel" id="config">
+    <h2><code class="inline">config.php</code></h2>
+    <p class="subtitle"><span class="layer-chip lc-config"><span class="sq" style="background:var(--layer-config)"></span>Capa de configuración</span></p>
+
+    <div class="shot noselect">
+      <img src="img/config_php.png" alt="Código de config.php con las constantes de conexión" draggable="false">
+    </div>
+    <p class="shot-caption">config.php — transcribir a mano, no copiar y pegar</p>
+
+    <div class="card">
+      <h3>Qué guarda</h3>
+      <p>
+        Cuatro constantes creadas con <code class="inline">define()</code>: <code class="inline">HOST</code>,
+        <code class="inline">BD</code>, <code class="inline">USUARIO</code> y <code class="inline">PASSWORD</code>.
+        Al ser constantes, no pueden reasignarse una vez definidas, y quedan disponibles en cualquier
+        archivo que incluya este.
+      </p>
+      <p>
+        Separar estos datos en su propio archivo evita repetir strings de conexión por todos lados y
+        deja un único lugar para cambiar credenciales si el proyecto se mueve de servidor.
+      </p>
+    </div>
+  </section>
+
+  <!-- CONEXION -->
+  <section class="panel" id="conexion">
+    <h2><code class="inline">conexion.php</code></h2>
+    <p class="subtitle"><span class="layer-chip lc-conexion"><span class="sq" style="background:var(--layer-conexion)"></span>Capa de conexión</span></p>
+
+    <div class="shot noselect">
+      <img src="img/conexion_php.png" alt="Código de conexion.php con la clase Conexion y el método conectar" draggable="false">
+    </div>
+    <p class="shot-caption">conexion.php — transcribir a mano, no copiar y pegar</p>
+
+    <div class="card">
+      <h3>Qué hace la clase <code class="inline">Conexion</code></h3>
+      <ul>
+        <li>Tiene un único método estático, <code class="inline">conectar()</code>, así se puede llamar sin instanciar la clase: <code class="inline">Conexion::conectar()</code>.</li>
+        <li>Arma el DSN de PDO uniendo <code class="inline">HOST</code> y <code class="inline">BD</code> desde <code class="inline">config.php</code>.</li>
+        <li><code class="inline">PDO::ATTR_ERRMODE</code> en <code class="inline">ERRMODE_EXCEPTION</code> hace que cualquier error de SQL lance una excepción en vez de fallar en silencio.</li>
+        <li>El <code class="inline">try/catch</code> atrapa <code class="inline">PDOException</code>: si la conexión falla, responde con código <code class="inline">500</code> y corta la ejecución con <code class="inline">exit</code>.</li>
+      </ul>
+    </div>
+  </section>
+
+  <!-- CONTROLLER -->
+  <section class="panel" id="controller">
+    <h2><code class="inline">PersonaController.php</code></h2>
+    <p class="subtitle"><span class="layer-chip lc-controller"><span class="sq" style="background:var(--layer-controller)"></span>Capa de controlador</span></p>
+
+    <div class="shot noselect">
+      <img src="img/PersonaController_php.png" alt="Código de PersonaController.php con los métodos obtener e insertar" draggable="false">
+    </div>
+    <p class="shot-caption">PersonaController.php — transcribir a mano, no copiar y pegar</p>
+
+    <div class="card">
+      <h3><code class="inline">obtener()</code> — responde a GET</h3>
+      <p>
+        Si llega un <code class="inline">id</code> por query string (<code class="inline">$_GET["id"]</code>),
+        busca una sola persona con una consulta preparada. Si no llega ningún <code class="inline">id</code>,
+        devuelve la tabla completa. En ambos casos, el resultado se imprime con
+        <code class="inline">json_encode()</code>.
+      </p>
+    </div>
+    <div class="card">
+      <h3><code class="inline">insertar()</code> — responde a POST</h3>
+      <p>
+        Lee el cuerpo crudo de la petición con <code class="inline">file_get_contents("php://input")</code>
+        y lo convierte de JSON a arreglo asociativo con <code class="inline">json_decode(..., true)</code>.
+        Si el JSON no es válido, corta con <code class="inline">400</code>. Si es válido, inserta con una
+        consulta preparada (<code class="inline">?</code> como placeholders) y responde <code class="inline">201</code>.
+      </p>
+    </div>
+  </section>
+
+  <!-- INDEX -->
+  <section class="panel" id="indexphp">
+    <h2><code class="inline">index.php</code></h2>
+    <p class="subtitle"><span class="layer-chip lc-index"><span class="sq" style="background:var(--layer-index)"></span>Punto de entrada</span></p>
+
+    <div class="shot noselect">
+      <img src="img/index_php.png" alt="Código de index.php con el switch sobre REQUEST_METHOD" draggable="false">
+    </div>
+    <p class="shot-caption">index.php — transcribir a mano, no copiar y pegar</p>
+
+    <div class="card">
+      <h3>El corazón del archivo: <code class="inline">$_SERVER["REQUEST_METHOD"]</code></h3>
+      <p>
+        Cada petición HTTP llega con un verbo (método) que indica la intención del cliente:
+        <code class="inline">GET</code> para pedir datos, <code class="inline">POST</code> para crear un
+        recurso, entre otros. PHP expone ese verbo en la variable superglobal
+        <code class="inline">$_SERVER</code>, bajo la clave <code class="inline">"REQUEST_METHOD"</code>.
+      </p>
+      <p>
+        Este archivo lo guarda en <code class="inline">$metodo</code> y usa un <code class="inline">switch</code>
+        para decidir qué hacer:
+      </p>
+      <ul>
+        <li><code class="inline">case "GET"</code> → llama a <code class="inline">$controlador->obtener()</code>.</li>
+        <li><code class="inline">case "POST"</code> → llama a <code class="inline">$controlador->insertar()</code>.</li>
+        <li><code class="inline">default</code> → cualquier otro método responde <code class="inline">405 Método no permitido</code>.</li>
+      </ul>
+      <p>
+        Antes de todo eso, <code class="inline">header("Content-Type: application/json; charset=UTF-8")</code>
+        le avisa al cliente que la respuesta va a ser JSON, no HTML.
+      </p>
+    </div>
+  </section>
+
+  <!-- POSTMAN -->
+  <section class="panel" id="postman">
+    <h2>Probando la API con Postman</h2>
+    <p class="subtitle">Sin frontend todavía — el cliente es la herramienta de testing</p>
+
+    <div class="shot noselect">
+      <img src="img/PostmanCaptura.png" alt="Captura de Postman haciendo un POST a index.php y recibiendo 201 Created" draggable="false">
+    </div>
+    <p class="shot-caption">POST a http://localhost/INET/PrimeraAPI/index.php</p>
+
+    <div class="card">
+      <h3>Qué está pasando en esta captura</h3>
+      <ul>
+        <li>El método elegido es <code class="inline">POST</code>, apuntando a <code class="inline">index.php</code>.</li>
+        <li>En la pestaña <code class="inline">Body → raw → JSON</code> se envía <code class="inline">{"nombre":"Pedro","edad":25}</code>.</li>
+        <li>Ese cuerpo es exactamente lo que <code class="inline">insertar()</code> lee con <code class="inline">php://input</code>.</li>
+        <li>La respuesta llega con <code class="inline">201 Created</code> y el JSON <code class="inline">{"mensaje":"Persona creada"}</code>.</li>
+      </ul>
+      <p>
+        Postman permite armar la petición completa (método, URL, headers, body) sin necesitar todavía
+        una página HTML con formularios — ideal para probar la API de forma aislada.
+      </p>
+    </div>
+  </section>
+
+  <!-- CODIGOS -->
+  <section class="panel" id="codigos">
+    <h2>Códigos de respuesta usados</h2>
+    <p class="subtitle">Cada familia de código cuenta una historia distinta</p>
+
+    <div class="codes-grid">
+      <div class="code-card cc-2xx">
+        <div class="num">201</div>
+        <div class="label">Created</div>
+        <p>Se usa en <code class="inline">insertar()</code> cuando la persona se guardó correctamente en la base de datos.</p>
+      </div>
+      <div class="code-card cc-4xx">
+        <div class="num">400</div>
+        <div class="label">Bad Request</div>
+        <p>Se dispara cuando <code class="inline">json_decode()</code> no logra interpretar el cuerpo enviado como JSON válido.</p>
+      </div>
+      <div class="code-card cc-4xx">
+        <div class="num">405</div>
+        <div class="label">Method Not Allowed</div>
+        <p>Responde el <code class="inline">default</code> del <code class="inline">switch</code> cuando llega un método que no es GET ni POST.</p>
+      </div>
+      <div class="code-card cc-5xx">
+        <div class="num">500</div>
+        <div class="label">Internal Server Error</div>
+        <p>Se usa en <code class="inline">conexion.php</code> si la conexión a MySQL falla dentro del <code class="inline">catch</code>.</p>
+      </div>
+    </div>
+
+    <div class="card" style="margin-top:24px;">
+      <h3>¿Y el 200?</h3>
+      <p>
+        Cuando <code class="inline">obtener()</code> responde correctamente, no se llama explícitamente
+        a <code class="inline">http_response_code()</code>. PHP, por defecto, responde con
+        <code class="inline">200 OK</code> mientras no se indique otra cosa. Es un buen punto para tener
+        en cuenta: los códigos que no se fijan a mano no desaparecen, simplemente toman el valor por
+        defecto del servidor.
+      </p>
+      <table class="ref">
+        <thead>
+          <tr><th>Rango</th><th>Significa</th><th>Ejemplo en esta API</th></tr>
+        </thead>
+        <tbody>
+          <tr><td>2xx</td><td>La petición se procesó con éxito</td><td><code class="inline">200</code> (implícito), <code class="inline">201</code></td></tr>
+          <tr><td>4xx</td><td>Error del lado del cliente</td><td><code class="inline">400</code>, <code class="inline">405</code></td></tr>
+          <tr><td>5xx</td><td>Error del lado del servidor</td><td><code class="inline">500</code></td></tr>
+        </tbody>
+      </table>
+    </div>
+  </section>
+
+  <!-- DESAFIO -->
+  <section class="panel" id="desafio">
+    <h2>Para seguir construyendo</h2>
+    <p class="subtitle">No hace falta resolver todo hoy — elegir uno y probarlo alcanza</p>
+
+    <div class="challenge">
+      <span class="tag">← Estudiantes</span>
+      <ol>
+        <li><b>Revisen <code class="inline">obtener()</code> con un id inexistente.</b> Prueben pedir un <code class="inline">id</code> que no existe en la tabla. ¿Qué código HTTP debería devolverse en ese caso, y cuál se está devolviendo hoy?</li>
+        <li><b>Completen la validación de <code class="inline">insertar()</code>.</b> ¿Qué pasa si el JSON es válido pero le falta la clave <code class="inline">"edad"</code>? Agreguen la verificación y el código de error correspondiente.</li>
+        <li><b>Sumen un caso <code class="inline">"PUT"</code> al switch.</b> Va a necesitar un método nuevo en el controlador, por ejemplo <code class="inline">actualizar()</code>, con su propia consulta preparada.</li>
+        <li><b>Sumen un caso <code class="inline">"DELETE"</code>.</b> Piensen qué dato necesitan recibir (¿query string?, ¿body?) para saber qué persona borrar.</li>
+        <li><b>Prueben todo desde Postman</b> antes de dar el archivo por terminado: un caso exitoso y al menos un caso de error por cada método nuevo.</li>
+      </ol>
+    </div>
+  </section>
+
+</main>
+
+<footer>
+  Laboratorio de Programación — INET · Material educativo de construcción progresiva, no representa una implementación final de producción.
+</footer>
+
+<script>
+  const buttons = document.querySelectorAll('.tab-btn');
+  const panels = document.querySelectorAll('.panel');
+  buttons.forEach(btn => {
+    btn.addEventListener('click', () => {
+      buttons.forEach(b => b.classList.remove('active'));
+      panels.forEach(p => p.classList.remove('active'));
+      btn.classList.add('active');
+      document.getElementById(btn.dataset.tab).classList.add('active');
+      window.scrollTo({ top: document.querySelector('.tabs-wrap').offsetTop, behavior: 'smooth' });
+    });
+  });
+</script>
+
+</body>
+</html>
