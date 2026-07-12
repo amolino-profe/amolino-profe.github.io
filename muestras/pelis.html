@@ -1,0 +1,202 @@
+<!DOCTYPE html>
+<html>
+<head>
+	<title></title>
+
+	<link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/4.0.0/css/bootstrap.min.css" integrity="sha384-Gn5384xqQ1aoWXA+058RXPxPg6fy4IWvTNh0E263XmFcJlSAwiGgFAW/dAiS6JXm" crossorigin="anonymous">
+
+	<style type="text/css">
+		.poster{
+			height: 18rem;
+		}
+
+        .card:hover{
+            transform: scale(1.05);
+            box-shadow: 0 10px 20px rgba(0,0,0,.12), 0 4px 8px rgba(0,0,0,.06);
+        }
+
+        .navbar {
+              margin-bottom: 20px;
+            }
+	</style>
+</head>
+
+
+
+<script type="text/javascript">
+	/*async function traerPeli() {
+          const response = await fetch('https://api.themoviedb.org/3/movie/1123?api_key=406e0fbf5e6e004b7f8c11e7b4ae9674', 
+                {
+                    method: 'GET',
+                });
+          // waits until the request completes...
+          const res = await response.json();
+          return res;       
+    }
+
+    traerPeli().then(dato => {
+      document.getElementById('Titulo').innerHTML = dato.original_title;
+      document.getElementById('Poster').src = "https://image.tmdb.org/t/p/w500/"+dato.poster_path;
+      //agregarImagen(dato.icon_url);
+    });*/
+
+
+    async function traerPelis() {
+        var link = "";
+        if(busqueda == ""){
+            link = 'https://api.themoviedb.org/3/movie/'+filtro+'?api_key=406e0fbf5e6e004b7f8c11e7b4ae9674';
+        }else{
+            link = 'https://api.themoviedb.org/3/search/movie?api_key=406e0fbf5e6e004b7f8c11e7b4ae9674&query='+busqueda+'';
+        }
+          const response = await fetch(link, 
+                {
+                    method: 'GET',
+                });
+          // waits until the request completes...
+          const res = await response.json();
+          return res;       
+    }
+
+    function mostrarPelis(){
+        busqueda = document.getElementById("busqueda").value;
+        filtro = document.getElementById("sel_filtro").value;
+
+        //Primero limpio todo el DOM, para que no vuelva a cargar encima
+        const myNode = document.getElementById("Listado");
+        while (myNode.firstChild) {
+            myNode.removeChild(myNode.lastChild);
+        }
+
+
+      //Llamo al metodo asincronico "traerPelis"
+        traerPelis().then(dato => {
+        	console.log(dato.results.length);
+        	filaNum = 0;
+
+        	for(i = 0; i < dato.results.length; i++){
+        		var fila = document.createElement("div");
+        		fila.className = "flex-row";
+        		
+                //Pongo 4 por fila
+        		if (i%4 == 0){
+        			filaNum++;
+        			fila.id = filaNum;
+        			document.getElementById("Listado").appendChild(fila);
+
+        			var grupoTarjetas = document.createElement("div");
+        			grupoTarjetas.className = "card-deck";
+        			grupoTarjetas.id="grupo"+filaNum;
+        			document.getElementById(filaNum).appendChild(grupoTarjetas);
+
+        			var salto = document.createElement("br");
+        			document.getElementById("Listado").appendChild(salto);
+
+        			
+        		}
+                //Muestra la pelicula
+        		generaItemPeli(dato.results[i], filaNum);
+        	}
+
+        });
+    }
+
+    function generaItemPeli(pelicula, filaNum){
+
+    	/*var contorno = document.createElement("div");
+    	contorno.className = "col-md-3";
+    	contorno.id = "col"+pelicula.id;
+    	document.getElementById("grupo"+filaNum).appendChild(contorno);*/
+
+    	//Div prioncipal de la tarjeta
+    	var tarjeta = document.createElement("div");
+    	tarjeta.className = "card";
+    	tarjeta.style.width = "12rem";
+    	tarjeta.id = "card"+pelicula.id;
+    	document.getElementById("grupo"+filaNum).appendChild(tarjeta);
+
+    	//imagen del poster
+    	var poster = document.createElement("img");
+        poster.src = "https://image.tmdb.org/t/p/w500/"+pelicula.poster_path;
+        poster.className = "card-img-top";
+        document.getElementById("card"+pelicula.id).appendChild(poster);
+
+        var cuerpoInfo = document.createElement("div");
+    	cuerpoInfo.className = "card-body";
+    	cuerpoInfo.id = "cuerpo"+pelicula.id;
+    	document.getElementById("card"+pelicula.id).appendChild(cuerpoInfo);
+
+    	//Contenido del cuerpo
+    	var titulo = document.createElement("h5");
+        titulo.innerHTML = pelicula.title;
+        titulo.className = "card-title";
+        document.getElementById("cuerpo"+pelicula.id).appendChild(titulo);
+
+        var fecha = document.createElement("p");
+        fecha.innerHTML = "Fecha de estreno "+pelicula.release_date;
+        fecha.className = "card-text";
+        document.getElementById("cuerpo"+pelicula.id).appendChild(fecha);
+
+        //Pie de la tarjeta
+        var pie = document.createElement("div");
+        pie.className = "card-footer";
+        pie.id="pie"+pelicula.id;
+        document.getElementById("card"+pelicula.id).appendChild(pie);
+
+        var textoPie = document.createElement("small");
+        textoPie.innerHTML = "Votacion: "+pelicula.vote_average;
+        textoPie.className = "text-muted";
+        document.getElementById("pie"+pelicula.id).appendChild(textoPie);
+    }
+
+    function limpiarBusqueda(){
+        document.getElementById("busqueda").value = "";
+    }
+
+
+</script>
+
+
+<body onload="mostrarPelis()">	
+
+    <nav class="navbar navbar-dark bg-dark navbar-fixed-top">
+        <div class="container-fluid">
+            <div class="navbar-header">
+                <a class="navbar-brand" href="#">Peliculas</a>
+            </div>
+
+        <div>
+           <div class="input-group mb-3">
+                <input type="text" class="form-control" placeholder="Ingrese titulo" aria-label="Ingrese titulo" aria-describedby="basic-addon2" id="busqueda">
+                <div class="input-group-append">
+                    <button class="btn btn-outline-secondary" type="button" onclick="mostrarPelis(), limpiarBusqueda()">Buscar</button>
+                </div>
+            </div>
+        </div>
+
+        <div>
+            <select id=sel_filtro onchange="mostrarPelis()" class="custom-select">
+                <option value="upcoming">A estrenar</option>
+                <option value="top_rated">Mejor rankeadas</option>
+            </select>
+        </div>
+        </div>
+    </nav>
+
+<div class="container"> 
+    
+
+  	<center>
+  		<div id="Listado">
+
+	</div><!--Fin listado-->
+	</center>
+</div>
+	
+	
+
+</body>
+
+<script src="https://code.jquery.com/jquery-3.2.1.slim.min.js" integrity="sha384-KJ3o2DKtIkvYIK3UENzmM7KCkRr/rE9/Qpg6aAZGJwFDMVNA/GpGFF93hXpG5KkN" crossorigin="anonymous"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/popper.js/1.12.9/umd/popper.min.js" integrity="sha384-ApNbgh9B+Y1QKtv3Rn7W3mgPxhU9K/ScQsAP7hUibX39j7fakFPskvXusvfa0b4Q" crossorigin="anonymous"></script>
+<script src="https://maxcdn.bootstrapcdn.com/bootstrap/4.0.0/js/bootstrap.min.js" integrity="sha384-JZR6Spejh4U02d8jOt6vLEHfe/JQGiRRSQQxSfFWpi1MquVdAyjUar5+76PVCmYl" crossorigin="anonymous"></script>
+</html>
