@@ -1,0 +1,546 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Ruteo con .htaccess — Laboratorio de Programación</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Syne:wght@600;700;800&family=JetBrains+Mono:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --bg: #0a0a12;
+    --bg-raised: #12111d;
+    --bg-card: #151426;
+    --line: #262440;
+    --text: #e3e1ef;
+    --text-dim: #8b87a8;
+    --text-faint: #56536f;
+
+    /* signature: anatomía de la URL — cada tramo, su color */
+    --seg-base: #6366f1;     /* dominio + carpeta del proyecto */
+    --seg-base-dim: #1b1a33;
+    --seg-recurso: #22d3ee;  /* recurso: /personas */
+    --seg-recurso-dim: #0d2730;
+    --seg-id: #f472b6;       /* id: /5 */
+    --seg-id-dim: #2c1526;
+
+    --ok: #4ade80;
+    --warn: #fbbf24;
+    --err: #f87171;
+
+    --accent: #818cf8;
+    --accent-soft: #818cf822;
+  }
+
+  *{box-sizing:border-box;}
+  html{scroll-behavior:smooth;}
+  body{
+    margin:0;
+    background:
+      radial-gradient(1100px 550px at 10% -10%, #221f4433, transparent 60%),
+      radial-gradient(900px 500px at 100% 0%, #0d2b3244, transparent 55%),
+      var(--bg);
+    color:var(--text);
+    font-family:'JetBrains Mono', monospace;
+    line-height:1.65;
+    -webkit-font-smoothing:antialiased;
+  }
+  h1,h2,h3,.display{ font-family:'Syne', sans-serif; }
+  ::selection{ background:var(--accent-soft); color:#fff; }
+  a{ color:inherit; }
+  .noselect{ user-select:none; -webkit-user-select:none; -webkit-touch-callout:none; }
+
+  /* ---------- HERO ---------- */
+  .hero{ max-width:980px; margin:0 auto; padding:72px 28px 40px; }
+  .eyebrow{
+    display:inline-flex; align-items:center; gap:8px;
+    font-size:12.5px; letter-spacing:.12em; text-transform:uppercase;
+    color:var(--accent); background:#818cf81a; border:1px solid #818cf840;
+    padding:6px 12px; border-radius:999px;
+  }
+  .eyebrow .dot{ width:6px;height:6px;border-radius:50%; background:var(--accent); box-shadow:0 0 8px var(--accent); }
+  .hero h1{
+    font-size:clamp(32px, 5vw, 50px); font-weight:800; line-height:1.06;
+    margin:22px 0 14px; letter-spacing:-0.01em;
+  }
+  .hero h1 span{ color:var(--accent); }
+  .hero p.lead{ color:var(--text-dim); font-size:16px; max-width:660px; margin:0 0 22px; }
+
+  .continuity{
+    display:flex; gap:12px; align-items:flex-start;
+    border-left:3px solid var(--seg-recurso);
+    background:var(--seg-recurso-dim);
+    padding:14px 18px; border-radius:6px;
+    font-size:13.5px; color:#bfe8ef; max-width:660px; margin-bottom:14px;
+  }
+  .continuity b{ color:var(--seg-recurso); }
+
+  .hero-note{
+    border-left:3px solid var(--warn);
+    background:#2b220f; padding:14px 18px; border-radius:6px;
+    font-size:13.5px; color:#e8d6a8; max-width:660px;
+  }
+  .hero-note b{ color:var(--warn); }
+
+  /* ---------- TABS ---------- */
+  .tabs-wrap{
+    position:sticky; top:0; z-index:50;
+    background:rgba(10,10,18,0.92); backdrop-filter:blur(10px);
+    border-bottom:1px solid var(--line);
+  }
+  .tabs{
+    max-width:980px; margin:0 auto; display:flex; gap:4px;
+    overflow-x:auto; padding:0 20px; scrollbar-width:thin;
+  }
+  .tabs::-webkit-scrollbar{ height:4px; }
+  .tabs::-webkit-scrollbar-thumb{ background:var(--line); border-radius:4px; }
+  .tab-btn{
+    flex:0 0 auto; background:none; border:none; color:var(--text-faint);
+    font-family:'JetBrains Mono', monospace; font-size:12.5px; font-weight:600;
+    letter-spacing:.03em; padding:16px 14px; cursor:pointer;
+    border-bottom:2px solid transparent; white-space:nowrap;
+    transition:color .15s ease, border-color .15s ease;
+  }
+  .tab-btn:hover{ color:var(--text); }
+  .tab-btn.active{ color:var(--accent); border-bottom-color:var(--accent); }
+
+  /* ---------- MAIN ---------- */
+  main{ max-width:980px; margin:0 auto; padding:40px 28px 100px; }
+  .panel{ display:none; animation:fade .25s ease; }
+  .panel.active{ display:block; }
+  @keyframes fade{ from{opacity:0; transform:translateY(6px);} to{opacity:1; transform:translateY(0);} }
+
+  .panel h2{ font-size:26px; font-weight:700; margin:0 0 6px; }
+  .panel .subtitle{ color:var(--text-dim); font-size:14px; margin:0 0 30px; }
+  .panel p{ color:#c7c4dc; font-size:14.5px; }
+  .panel ul, .panel ol{ color:#c7c4dc; font-size:14.5px; padding-left:20px; }
+  .panel li{ margin-bottom:8px; }
+  code.inline{
+    background:#1c1a30; border:1px solid var(--line); color:#b3e9f5;
+    padding:2px 7px; border-radius:4px; font-size:13px;
+  }
+
+  .card{
+    background:var(--bg-card); border:1px solid var(--line);
+    border-radius:12px; padding:24px; margin-bottom:24px;
+  }
+  .card h3{ font-size:16px; margin:0 0 10px; display:flex; align-items:center; gap:10px; }
+
+  /* URL anatomy — signature element */
+  .url-anatomy{
+    background:var(--bg-raised); border:1px solid var(--line);
+    border-radius:12px; padding:26px 20px; margin:18px 0 26px;
+    overflow-x:auto;
+  }
+  .url-line{
+    display:flex; flex-wrap:wrap; align-items:baseline;
+    gap:0; font-size:clamp(13px, 2.4vw, 18px); font-weight:600;
+    justify-content:center; white-space:nowrap;
+  }
+  .seg{ padding:4px 2px; border-radius:4px; }
+  .seg-base{ color:var(--seg-base); }
+  .seg-recurso{ color:var(--seg-recurso); }
+  .seg-slash{ color:var(--text-faint); }
+  .seg-id{ color:var(--seg-id); }
+  .url-legend{
+    display:flex; flex-wrap:wrap; gap:10px; justify-content:center;
+    margin-top:18px;
+  }
+  .leg{
+    display:flex; align-items:center; gap:7px;
+    font-size:12px; color:var(--text-dim);
+    background:#0d0c18; border:1px solid var(--line);
+    padding:6px 12px; border-radius:999px;
+  }
+  .leg .sq{ width:8px; height:8px; border-radius:2px; }
+
+  .layer-chip{
+    display:inline-flex; align-items:center; gap:6px;
+    font-size:11px; text-transform:uppercase; letter-spacing:.08em;
+    padding:3px 9px; border-radius:999px; font-weight:700;
+  }
+  .layer-chip .sq{ width:7px; height:7px; border-radius:2px; }
+  .lc-htaccess{ background:#818cf81a; color:var(--accent); border:1px solid #818cf833; }
+  .lc-index{ background:#22d3ee1a; color:var(--seg-recurso); border:1px solid #22d3ee33; }
+  .lc-controller{ background:#f472b61a; color:var(--seg-id); border:1px solid #f472b633; }
+
+  .shot{
+    border-radius:12px; overflow:hidden; border:1px solid var(--line);
+    margin:14px 0 22px; background:#0d0c18;
+  }
+  .shot img{ display:block; width:100%; height:auto; pointer-events:none; }
+  .shot-caption{
+    font-size:12px; color:var(--text-faint); text-align:center;
+    margin-top:-10px; margin-bottom:22px; letter-spacing:.03em;
+  }
+
+  /* before / after */
+  .diff{
+    display:grid; grid-template-columns:1fr 1fr; gap:16px;
+    margin:18px 0 24px;
+  }
+  @media (max-width:680px){ .diff{ grid-template-columns:1fr; } }
+  .diff-col{
+    border-radius:10px; padding:18px; border:1px solid var(--line);
+    background:var(--bg-raised);
+  }
+  .diff-col.before{ border-top:3px solid var(--err); }
+  .diff-col.after{ border-top:3px solid var(--ok); }
+  .diff-col .tag{
+    font-size:11px; text-transform:uppercase; letter-spacing:.08em;
+    font-weight:700; margin-bottom:10px; display:block;
+  }
+  .diff-col.before .tag{ color:var(--err); }
+  .diff-col.after .tag{ color:var(--ok); }
+  .diff-col pre{
+    margin:0; font-size:12.5px; color:#d7d4ea;
+    white-space:pre-wrap; word-break:break-word;
+  }
+
+  .req-flow{ display:flex; flex-wrap:wrap; gap:10px; align-items:center; margin:20px 0 10px; }
+  .req-step{
+    background:var(--bg-raised); border:1px solid var(--line); border-radius:8px;
+    padding:10px 14px; font-size:12.5px; font-weight:600;
+  }
+  .req-step.hl{ color:var(--accent); border-color:#818cf855; }
+  .req-arrow{ color:var(--text-faint); }
+
+  .challenge{
+    border:1px dashed #f472b655;
+    background:linear-gradient(180deg, #f472b60d, transparent);
+    border-radius:12px; padding:24px; margin-top:10px;
+  }
+  .challenge .tag{
+    display:inline-block; font-size:11px; font-weight:700; letter-spacing:.08em;
+    text-transform:uppercase; color:#f472b6; background:#f472b61a;
+    border:1px solid #f472b633; padding:4px 10px; border-radius:999px; margin-bottom:14px;
+  }
+  .challenge ol{ margin:0; padding-left:20px; }
+  .challenge li{ margin-bottom:12px; color:#e4e2ee; }
+  .challenge li b{ color:#fff; }
+
+  table.ref{ width:100%; border-collapse:collapse; font-size:13px; margin-top:14px; }
+  table.ref th, table.ref td{ text-align:left; padding:10px 12px; border-bottom:1px solid var(--line); }
+  table.ref th{ color:var(--text-faint); font-weight:600; text-transform:uppercase; font-size:11px; letter-spacing:.05em; }
+  table.ref td code.inline{ font-size:12px; }
+
+  footer{
+    max-width:980px; margin:0 auto; padding:30px 28px 60px;
+    color:var(--text-faint); font-size:12px; border-top:1px solid var(--line);
+  }
+
+  @media (max-width:640px){
+    .hero{ padding:50px 18px 30px; }
+    main{ padding:30px 18px 80px; }
+  }
+</style>
+</head>
+<body>
+
+<div class="hero">
+  <span class="eyebrow"><span class="dot"></span>Laboratorio de Programación · INET</span>
+  <h1>Ruteo con <span>.htaccess</span></h1>
+  <p class="lead">
+    La API anterior respondía siempre en <code class="inline">index.php</code>, sin distinguir
+    recursos por URL. Ahora vamos a lograr que <code class="inline">/personas</code> y
+    <code class="inline">/personas/5</code> apunten al mismo archivo, pero con información distinta
+    disponible adentro.
+  </p>
+  <div class="continuity">
+    <span>
+      <b>Continuidad:</b> este documento parte de la <b>primera versión de la API</b> (config.php,
+      conexion.php y la estructura en capas ya construida). No se repiten esos archivos acá — el foco
+      está puesto en lo que cambia para sumar ruteo.
+    </span>
+  </div>
+  <div class="hero-note">
+    <b>Nota:</b> sigue siendo material educativo de construcción progresiva. El ruteo manual con
+    <code class="inline">.htaccess</code> es un paso intermedio para entender el mecanismo — no reemplaza
+    a un enrutador de framework, pero enseña qué hace uno por debajo.
+  </div>
+</div>
+
+<div class="tabs-wrap">
+  <div class="tabs" id="tabs">
+    <button class="tab-btn active" data-tab="intro">Resumen</button>
+    <button class="tab-btn" data-tab="htaccess">.htaccess</button>
+    <button class="tab-btn" data-tab="anatomia">Anatomía de una URL</button>
+    <button class="tab-btn" data-tab="indexphp">index.php</button>
+    <button class="tab-btn" data-tab="controller">PersonaController.php</button>
+    <button class="tab-btn" data-tab="antesahora">Antes vs. Ahora</button>
+    <button class="tab-btn" data-tab="postman">Probando con Postman</button>
+    <button class="tab-btn" data-tab="desafio">Desafío</button>
+  </div>
+</div>
+
+<main>
+
+  <!-- RESUMEN -->
+  <section class="panel active" id="intro">
+    <h2>¿Qué problema resuelve el ruteo?</h2>
+    <p class="subtitle">Pasar de un único punto de entrada ciego a URLs que dicen algo</p>
+
+    <div class="card">
+      <h3>El problema de la versión anterior</h3>
+      <p>
+        Todo pasaba por <code class="inline">index.php</code>, y ese archivo solo miraba el
+        <b>método HTTP</b> (<code class="inline">GET</code>, <code class="inline">POST</code>) para
+        decidir qué hacer. No había forma de decirle "quiero la persona con id 5" desde la URL: el id
+        solo podía viajar como <code class="inline">?id=5</code> en el query string.
+      </p>
+      <p>
+        Con ruteo, la URL misma pasa a tener significado: <code class="inline">/personas/5</code> le dice
+        al servidor qué recurso y qué identificador está pidiendo, sin necesidad de parámetros sueltos.
+      </p>
+    </div>
+
+    <div class="req-flow">
+      <div class="req-step">Navegador / Postman</div>
+      <div class="req-arrow">→</div>
+      <div class="req-step hl">.htaccess</div>
+      <div class="req-arrow">→</div>
+      <div class="req-step">index.php</div>
+      <div class="req-arrow">→</div>
+      <div class="req-step">PersonaController.php</div>
+    </div>
+
+    <div class="card" style="margin-top:24px;">
+      <h3>Qué archivos cambian en esta entrega</h3>
+      <ul>
+        <li><code class="inline">.htaccess</code> — nuevo. Reescribe cualquier URL hacia <code class="inline">index.php</code>.</li>
+        <li><code class="inline">index.php</code> — ahora interpreta la URL reescrita para extraer recurso e id.</li>
+        <li><code class="inline">PersonaController.php</code> — <code class="inline">obtener()</code> recibe el id como parámetro y responde <code class="inline">404</code> si no existe.</li>
+        <li><code class="inline">config.php</code> y <code class="inline">conexion.php</code> — sin cambios, siguen igual que en la primera versión.</li>
+      </ul>
+    </div>
+  </section>
+
+  <!-- HTACCESS -->
+  <section class="panel" id="htaccess">
+    <h2><code class="inline">.htaccess</code></h2>
+    <p class="subtitle"><span class="layer-chip lc-htaccess"><span class="sq" style="background:var(--accent)"></span>Reescritura de URL</span></p>
+
+    <div class="shot noselect">
+      <img src="img/htaccess.png" alt="Contenido del archivo .htaccess con RewriteEngine y RewriteRule" draggable="false">
+    </div>
+    <p class="shot-caption">.htaccess — se coloca en la raíz del proyecto, junto a index.php</p>
+
+    <div class="card">
+      <h3>Línea por línea</h3>
+      <ul>
+        <li><code class="inline">RewriteEngine On</code> — activa el motor de reescritura de Apache (<code class="inline">mod_rewrite</code>) para esta carpeta.</li>
+        <li><code class="inline">RewriteCond %{REQUEST_FILENAME} !-f</code> — la condición se cumple si lo pedido <b>no</b> es un archivo físico existente.</li>
+        <li><code class="inline">RewriteCond %{REQUEST_FILENAME} !-d</code> — y tampoco es una carpeta física existente.</li>
+        <li><code class="inline">RewriteRule ^(.*)$ index.php?url=$1 [QSA,L]</code> — si ambas condiciones se cumplen, cualquier URL <code class="inline">^(.*)$</code> se redirige internamente a <code class="inline">index.php</code>, pasando todo lo que venía en la URL como el parámetro <code class="inline">url</code>.</li>
+      </ul>
+    </div>
+
+    <div class="card">
+      <h3>¿Por qué las dos condiciones?</h3>
+      <p>
+        Sin ellas, hasta un pedido de una imagen o un archivo <code class="inline">.css</code> real
+        terminaría redirigido a <code class="inline">index.php</code>. Las condiciones le dicen a Apache:
+        "solo reescribí si lo que piden no existe como archivo o carpeta real" — así los recursos
+        estáticos se siguen sirviendo de forma normal.
+      </p>
+    </div>
+
+    <div class="card">
+      <h3>Los flags entre corchetes</h3>
+      <table class="ref">
+        <thead><tr><th>Flag</th><th>Significa</th></tr></thead>
+        <tbody>
+          <tr><td><code class="inline">QSA</code></td><td>Query String Append — conserva cualquier parámetro adicional que ya viniera en la URL original.</td></tr>
+          <tr><td><code class="inline">L</code></td><td>Last — le dice a Apache que, si esta regla aplicó, deje de evaluar las siguientes.</td></tr>
+        </tbody>
+      </table>
+    </div>
+  </section>
+
+  <!-- ANATOMIA -->
+  <section class="panel" id="anatomia">
+    <h2>Anatomía de una URL</h2>
+    <p class="subtitle">Lo que antes eran parámetros sueltos, ahora es la ruta misma</p>
+
+    <div class="url-anatomy">
+      <div class="url-line">
+        <span class="seg seg-base">http://localhost/INET/RuteoAPI/</span><span class="seg seg-recurso">personas</span><span class="seg-slash">/</span><span class="seg seg-id">5</span>
+      </div>
+      <div class="url-legend">
+        <span class="leg"><span class="sq" style="background:var(--seg-base)"></span>Base del proyecto — sin cambios</span>
+        <span class="leg"><span class="sq" style="background:var(--seg-recurso)"></span>Recurso → <code class="inline">$recurso</code></span>
+        <span class="leg"><span class="sq" style="background:var(--seg-id)"></span>Identificador → <code class="inline">$id</code></span>
+      </div>
+    </div>
+
+    <div class="card">
+      <h3>Cómo se separan esos tramos en PHP</h3>
+      <p>
+        Todo lo que sigue a la base del proyecto llega como el valor de <code class="inline">$_GET["url"]</code>,
+        gracias al <code class="inline">.htaccess</code>. A partir de ahí:
+      </p>
+      <ul>
+        <li><code class="inline">explode("/", trim($url,"/"))</code> corta ese texto en partes usando <code class="inline">/</code> como separador, y <code class="inline">trim()</code> se asegura de que no queden barras vacías al principio o al final.</li>
+        <li>La posición <code class="inline">0</code> de ese arreglo es el recurso: <code class="inline">$recurso = $ruta[0] ?? ""</code>.</li>
+        <li>La posición <code class="inline">1</code>, si existe, es el id: <code class="inline">$id = $ruta[1] ?? null</code>.</li>
+      </ul>
+      <p>
+        El operador <code class="inline">??</code> (null coalescing) evita errores cuando esa posición no
+        existe — por ejemplo, cuando la URL es solo <code class="inline">/personas</code> sin id.
+      </p>
+    </div>
+  </section>
+
+  <!-- INDEX -->
+  <section class="panel" id="indexphp">
+    <h2><code class="inline">index.php</code></h2>
+    <p class="subtitle"><span class="layer-chip lc-index"><span class="sq" style="background:var(--seg-recurso)"></span>Punto de entrada, ahora con ruteo</span></p>
+
+    <div class="shot noselect">
+      <img src="img/index_php.png" alt="Código actualizado de index.php interpretando la URL reescrita" draggable="false">
+    </div>
+    <p class="shot-caption">index.php — transcribir a mano, no copiar y pegar</p>
+
+    <div class="card">
+      <h3>Lo nuevo respecto a la primera versión</h3>
+      <ul>
+        <li>Se agregan las líneas que arman <code class="inline">$recurso</code> y <code class="inline">$id</code> a partir de <code class="inline">$_GET["url"]</code>, como se explicó en la pestaña anterior.</li>
+        <li>Antes del <code class="inline">switch</code>, hay una validación nueva: <code class="inline">if ($recurso != "personas")</code> corta con <code class="inline">404</code> si la URL pide un recurso que no existe en esta API.</li>
+        <li><code class="inline">$_SERVER["REQUEST_METHOD"]</code> sigue cumpliendo el mismo rol que en la primera versión: decide qué método del controlador se llama.</li>
+        <li>La diferencia está en la llamada dentro de <code class="inline">case "GET"</code>: ahora es <code class="inline">$controlador->obtener($id)</code>, pasándole el id extraído de la URL en lugar de leerlo directamente de <code class="inline">$_GET["id"]</code>.</li>
+      </ul>
+    </div>
+  </section>
+
+  <!-- CONTROLLER -->
+  <section class="panel" id="controller">
+    <h2><code class="inline">PersonaController.php</code></h2>
+    <p class="subtitle"><span class="layer-chip lc-controller"><span class="sq" style="background:var(--seg-id)"></span>Ahora recibe el id como parámetro</span></p>
+
+    <div class="shot noselect">
+      <img src="img/PersonaController_php.png" alt="Código actualizado de PersonaController.php con obtener($id) e insertar() con validación" draggable="false">
+    </div>
+    <p class="shot-caption">PersonaController.php — transcribir a mano, no copiar y pegar</p>
+
+    <div class="card">
+      <h3><code class="inline">obtener($id = null)</code></h3>
+      <p>
+        Ya no busca el id dentro de <code class="inline">$_GET</code>: lo recibe como parámetro del
+        método, con <code class="inline">null</code> como valor por defecto. Si <code class="inline">$id</code>
+        llegó, busca esa persona puntual; si la encuentra, responde <code class="inline">200</code>, y si
+        no, responde <code class="inline">404</code> con un mensaje claro. Si no llegó ningún id, devuelve
+        la lista completa con <code class="inline">200</code>.
+      </p>
+    </div>
+    <div class="card">
+      <h3><code class="inline">insertar()</code> con validación</h3>
+      <p>
+        Se suma una verificación explícita: si falta <code class="inline">"nombre"</code> o
+        <code class="inline">"edad"</code> en el cuerpo recibido, corta con <code class="inline">400</code>
+        y <code class="inline">"Faltan datos"</code>, sin llegar a tocar la base de datos. Si todo está
+        presente, inserta y devuelve <code class="inline">201</code> junto con el <code class="inline">id</code>
+        recién creado, usando <code class="inline">$pdo->lastInsertId()</code>.
+      </p>
+    </div>
+  </section>
+
+  <!-- ANTES VS AHORA -->
+  <section class="panel" id="antesahora">
+    <h2>Antes vs. ahora</h2>
+    <p class="subtitle">El mismo objetivo, resuelto con más precisión</p>
+
+    <div class="diff">
+      <div class="diff-col before">
+        <span class="tag">Antes</span>
+        <pre>GET /index.php?id=5
+
+$id llega desde $_GET["id"]
+Solo existe una "ruta": index.php
+No hay 404 real por id inexistente</pre>
+      </div>
+      <div class="diff-col after">
+        <span class="tag">Ahora</span>
+        <pre>GET /personas/5
+
+$id llega desde la URL, vía .htaccess
+"personas" se valida como recurso conocido
+404 explícito si el id no existe en la tabla</pre>
+      </div>
+    </div>
+
+    <div class="card">
+      <h3>Lo que no cambió</h3>
+      <p>
+        <code class="inline">$_SERVER["REQUEST_METHOD"]</code> sigue siendo lo que decide entre
+        <code class="inline">obtener()</code> e <code class="inline">insertar()</code>. El ruteo resuelve
+        <b>qué recurso e id</b> están involucrados; el método HTTP sigue resolviendo <b>qué acción</b> se
+        quiere hacer sobre ellos. Son dos preguntas distintas, respondidas por dos mecanismos distintos.
+      </p>
+    </div>
+  </section>
+
+  <!-- POSTMAN -->
+  <section class="panel" id="postman">
+    <h2>Probando el ruteo con Postman</h2>
+    <p class="subtitle">Las URLs ahora llevan información, no solo la dirección del archivo</p>
+
+    <div class="card">
+      <h3>Casos para probar</h3>
+      <table class="ref">
+        <thead><tr><th>Método</th><th>URL</th><th>Resultado esperado</th></tr></thead>
+        <tbody>
+          <tr><td><code class="inline">GET</code></td><td><code class="inline">/INET/RuteoAPI/personas</code></td><td><code class="inline">200</code> con la lista completa</td></tr>
+          <tr><td><code class="inline">GET</code></td><td><code class="inline">/INET/RuteoAPI/personas/1</code></td><td><code class="inline">200</code> con esa persona, si existe</td></tr>
+          <tr><td><code class="inline">GET</code></td><td><code class="inline">/INET/RuteoAPI/personas/999</code></td><td><code class="inline">404</code> — "Persona no encontrada"</td></tr>
+          <tr><td><code class="inline">GET</code></td><td><code class="inline">/INET/RuteoAPI/clientes</code></td><td><code class="inline">404</code> — "Recurso inexistente"</td></tr>
+          <tr><td><code class="inline">POST</code></td><td><code class="inline">/INET/RuteoAPI/personas</code></td><td><code class="inline">201</code> si el body trae nombre y edad; <code class="inline">400</code> si falta alguno</td></tr>
+        </tbody>
+      </table>
+      <p>
+        Notar que el <code class="inline">id</code> ya no se manda como query string
+        (<code class="inline">?id=1</code>): ahora forma parte del path de la URL, tal como se armó en
+        la pestaña "Anatomía de una URL".
+      </p>
+    </div>
+  </section>
+
+  <!-- DESAFIO -->
+  <section class="panel" id="desafio">
+    <h2>Para seguir construyendo</h2>
+    <p class="subtitle">No hace falta resolver todo hoy — elegir uno y probarlo alcanza</p>
+
+    <div class="challenge">
+      <span class="tag">← Estudiantes</span>
+      <ol>
+        <li><b>Prueben una URL con mayúsculas</b>, como <code class="inline">/Personas</code>. ¿La comparación <code class="inline">$recurso != "personas"</code> la detecta como recurso válido o inexistente? ¿Les parece el comportamiento correcto?</li>
+        <li><b>Agreguen un tercer segmento a la URL</b> y revisen qué valor toma en <code class="inline">$ruta</code>. Piensen para qué podría servir un tercer segmento en una API futura.</li>
+        <li><b>Sumen soporte para <code class="inline">PUT</code> y <code class="inline">DELETE</code></b> en el <code class="inline">switch</code> de <code class="inline">index.php</code>, aprovechando que ahora ya tienen <code class="inline">$id</code> disponible antes de llamar al controlador.</li>
+        <li><b>¿Qué pasa si piden <code class="inline">/personas/abc</code></b> (un id que no es numérico)? Prueben ese caso y decidan si conviene validarlo antes de llegar a la consulta SQL.</li>
+        <li><b>Prueben todo desde Postman</b> antes de dar el archivo por terminado: un caso exitoso y al menos un caso de error por cada ruta nueva.</li>
+      </ol>
+    </div>
+  </section>
+
+</main>
+
+<footer>
+  Laboratorio de Programación — INET · Segunda entrega, continúa la primera versión de la API. Material educativo de construcción progresiva.
+</footer>
+
+<script>
+  const buttons = document.querySelectorAll('.tab-btn');
+  const panels = document.querySelectorAll('.panel');
+  buttons.forEach(btn => {
+    btn.addEventListener('click', () => {
+      buttons.forEach(b => b.classList.remove('active'));
+      panels.forEach(p => p.classList.remove('active'));
+      btn.classList.add('active');
+      document.getElementById(btn.dataset.tab).classList.add('active');
+      window.scrollTo({ top: document.querySelector('.tabs-wrap').offsetTop, behavior: 'smooth' });
+    });
+  });
+</script>
+
+</body>
+</html>
