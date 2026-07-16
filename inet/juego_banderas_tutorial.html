@@ -448,31 +448,39 @@
   <section>
     <div class="section-label">02 — La API</div>
     <h2>REST Countries</h2>
-    <p>Vamos a usar la API pública de REST Countries. No requiere registro ni API key. El endpoint que nos interesa es el siguiente:</p>
+    <p>Vamos a usar la API pública de REST Countries. Desde que pasó a la versión <code style="color:var(--accent)">v5</code>, ya <strong>no</strong> se puede usar sin autenticación: hay que crear una cuenta gratuita en <code style="color:var(--accent4)">restcountries.com/sign-up</code> para obtener una API key, y enviarla en cada pedido dentro del header <code style="color:var(--accent)">Authorization</code>.</p>
 
     <div class="api-box">
-      <div class="api-url">GET https://restcountries.com/v3.1/all?fields=name,flags</div>
-      <p style="font-size:.9rem; color:var(--muted); margin:0">Pedimos solo los campos <code style="color:var(--accent)">name</code> y <code style="color:var(--accent)">flags</code> para no traer datos innecesarios. Esto hace la respuesta mucho más liviana.</p>
+      <div class="api-url">GET https://api.restcountries.com/countries/v5?response_fields=names,flag&amp;limit=100</div>
+      <p style="font-size:.9rem; color:var(--muted); margin:0 0 14px">Con <code style="color:var(--accent)">response_fields</code> pedimos solo los campos <code style="color:var(--accent)">names</code> y <code style="color:var(--accent)">flag</code>, igual que antes hacíamos con <code style="color:var(--accent)">fields</code>. La diferencia importante es que este endpoint devuelve <strong>páginas</strong> de países, no la lista completa de una sola vez.</p>
+      <p style="font-size:.9rem; color:var(--muted); margin:0">Cada pedido necesita el header:</p>
+      <div class="api-url" style="display:block; margin:10px 0 0">Authorization: Bearer TU_API_KEY</div>
     </div>
 
+    <h2 style="font-size:1.2rem; margin-top:30px;">⚠ Paso extra: habilitar CORS para tu key</h2>
+    <p>Como el <code style="color:var(--keyword)">fetch</code> se hace directo desde el navegador, la API necesita saber desde qué origen se le puede llamar con esa key. Por defecto, cualquier pedido desde el navegador queda bloqueado. Hay que entrar a <code style="color:var(--accent4)">restcountries.com/api-keys</code>, editar la key y en <strong>CORS Allowed Origins</strong> agregar <code style="color:var(--accent)">localhost</code> (solo el hostname, sin <code style="color:var(--accent)">http://</code> ni puerto). Si te olvidás de este paso, el pedido va a fallar en el navegador aunque la key sea correcta.</p>
+
+    <h2 style="font-size:1.2rem; margin-top:30px;">Paginación: por qué ya no alcanza con un solo pedido</h2>
+    <p>La vieja <code style="color:var(--var)">/v3.1/all</code> devolvía los ~250 países en un único array. La v5 pagina los resultados: por defecto trae 25 países, y el plan gratuito permite subir el <code style="color:var(--accent)">limit</code> hasta 100 por pedido como máximo. Como para el juego queremos el mazo completo de países, vamos a pedir de a 100 y repetir el pedido corriendo el <code style="color:var(--accent)">offset</code>, hasta que la API nos diga que no quedan más páginas (<code style="color:var(--accent)">data.meta.more</code> en <code style="color:var(--string)">false</code>). Esto lo resolvemos dentro de <code style="color:var(--func)">cargarPaises()</code>, más abajo.</p>
+
     <h2 style="font-size:1.2rem; margin-top:30px;">Formato de la respuesta</h2>
-    <p>Cada elemento del array que devuelve la API tiene esta estructura:</p>
+    <p>La v5 envuelve todo dentro de <code style="color:var(--accent)">data</code>: la lista de países está en <code style="color:var(--accent)">data.objects</code>, e info de paginación en <code style="color:var(--accent)">data.meta</code>. Cada país dentro de <code style="color:var(--accent)">objects</code> tiene esta estructura:</p>
 
     <div class="code-block">
       <div class="code-header">
         <div class="dot r"></div><div class="dot y"></div><div class="dot g"></div>
-        <span class="code-title">respuesta JSON — un país</span>
+        <span class="code-title">respuesta JSON — un país (dentro de data.objects)</span>
       </div>
       <div class="code-body"><span class="json-punct">{</span>
-  <span class="json-key">"flags"</span><span class="json-punct">: {</span>
-    <span class="json-key">"png"</span><span class="json-punct">:</span>  <span class="json-str">"https://flagcdn.com/w320/uy.png"</span><span class="json-punct">,</span>
-    <span class="json-key">"svg"</span><span class="json-punct">:</span>  <span class="json-str">"https://flagcdn.com/uy.svg"</span><span class="json-punct">,</span>
-    <span class="json-key">"alt"</span><span class="json-punct">:</span>  <span class="json-str">"Descripción de la bandera..."</span>
+  <span class="json-key">"flag"</span><span class="json-punct">: {</span>
+    <span class="json-key">"url_png"</span><span class="json-punct">:</span>      <span class="json-str">"https://flags.restcountries.com/v5/w320/uy.png"</span><span class="json-punct">,</span>
+    <span class="json-key">"url_svg"</span><span class="json-punct">:</span>      <span class="json-str">"https://flags.restcountries.com/v5/svg/uy.svg"</span><span class="json-punct">,</span>
+    <span class="json-key">"description"</span><span class="json-punct">:</span>  <span class="json-str">"Descripción de la bandera..."</span>
   <span class="json-punct">},</span>
-  <span class="json-key">"name"</span><span class="json-punct">: {</span>
+  <span class="json-key">"names"</span><span class="json-punct">: {</span>
     <span class="json-key">"common"</span><span class="json-punct">:</span>    <span class="json-str">"Uruguay"</span><span class="json-punct">,</span>
     <span class="json-key">"official"</span><span class="json-punct">:</span>  <span class="json-str">"Oriental Republic of Uruguay"</span><span class="json-punct">,</span>
-    <span class="json-key">"nativeName"</span><span class="json-punct">: {</span>
+    <span class="json-key">"native"</span><span class="json-punct">: {</span>
       <span class="json-key">"spa"</span><span class="json-punct">: {</span>
         <span class="json-key">"official"</span><span class="json-punct">:</span> <span class="json-str">"República Oriental del Uruguay"</span><span class="json-punct">,</span>
         <span class="json-key">"common"</span><span class="json-punct">:</span>   <span class="json-str">"Uruguay"</span>
@@ -481,6 +489,8 @@
   <span class="json-punct">}</span>
 <span class="json-punct">}</span></div>
     </div>
+
+    <p style="font-size:.9rem; color:var(--muted)">Los nombres de los campos cambiaron: <code style="color:var(--accent)">name</code> ahora es <code style="color:var(--accent)">names</code> (plural), y <code style="color:var(--accent)">flags</code> ahora es <code style="color:var(--accent)">flag</code> (singular), con <code style="color:var(--accent)">png</code>/<code style="color:var(--accent)">svg</code>/<code style="color:var(--accent)">alt</code> renombrados a <code style="color:var(--accent)">url_png</code>/<code style="color:var(--accent)">url_svg</code>/<code style="color:var(--accent)">description</code>.</p>
 
     <h2 style="font-size:1.2rem; margin-top:30px;">¿Cómo accedo a cada dato?</h2>
     <p>Si tenemos un país guardado en la variable <code style="color:var(--var)">pais</code>, accedemos a sus propiedades con punto:</p>
@@ -491,11 +501,11 @@
           <tr><th>Expresión</th><th>→</th><th>Resultado</th></tr>
         </thead>
         <tbody>
-          <tr><td>pais.name.common</td><td class="arrow">→</td><td>"Uruguay"</td></tr>
-          <tr><td>pais.name.official</td><td class="arrow">→</td><td>"Oriental Republic of Uruguay"</td></tr>
-          <tr><td>pais.flags.png</td><td class="arrow">→</td><td>"https://flagcdn.com/w320/uy.png"</td></tr>
-          <tr><td>pais.flags.svg</td><td class="arrow">→</td><td>"https://flagcdn.com/uy.svg"</td></tr>
-          <tr><td>pais.flags.alt</td><td class="arrow">→</td><td>"The flag of Uruguay is..."</td></tr>
+          <tr><td>pais.names.common</td><td class="arrow">→</td><td>"Uruguay"</td></tr>
+          <tr><td>pais.names.official</td><td class="arrow">→</td><td>"Oriental Republic of Uruguay"</td></tr>
+          <tr><td>pais.flag.url_png</td><td class="arrow">→</td><td>"https://flags.restcountries.com/v5/w320/uy.png"</td></tr>
+          <tr><td>pais.flag.url_svg</td><td class="arrow">→</td><td>"https://flags.restcountries.com/v5/svg/uy.svg"</td></tr>
+          <tr><td>pais.flag.description</td><td class="arrow">→</td><td>"The flag of Uruguay is..."</td></tr>
         </tbody>
       </table>
     </div>
@@ -505,14 +515,17 @@
   <section>
     <div class="section-label">03 — JavaScript</div>
     <h2>Función: cargarPaises()</h2>
-    <p>El primer paso es traer todos los países desde la API al arrancar el juego. Usamos <code style="color:var(--keyword)">async/await</code> para manejar la operación asincrónica de forma clara. Una vez que tenemos los datos, llamamos a la siguiente función que los usa.</p>
+    <p>El primer paso es traer todos los países desde la API al arrancar el juego. Usamos <code style="color:var(--keyword)">async/await</code> para manejar la operación asincrónica de forma clara. Como la v5 pagina de a 100 países como máximo, repetimos el pedido corriendo el <code style="color:var(--accent)">offset</code> hasta juntarlos todos. Una vez que tenemos los datos, llamamos a la siguiente función que los usa.</p>
 
     <div class="code-block">
       <div class="code-header">
         <div class="dot r"></div><div class="dot y"></div><div class="dot g"></div>
         <span class="code-title">cargar paises función</span>
       </div>
-      <div class="code-body"><span class="cm">// Variable global donde guardamos todos los países</span>
+      <div class="code-body"><span class="cm">// Tu API key de restcountries.com/sign-up</span>
+<span class="kw">const</span> <span class="vr">API_KEY</span> <span class="op">=</span> <span class="str">"TU_API_KEY"</span><span class="op">;</span>
+
+<span class="cm">// Variable global donde guardamos todos los países</span>
 <span class="kw">let</span> <span class="vr">paises</span> <span class="op">=</span> <span class="nm">[]</span><span class="op">;</span>
 <span class="kw">let</span> <span class="vr">paisCorrecto</span><span class="op">;</span>
 
@@ -520,14 +533,30 @@
 
     <span class="kw">try</span> <span class="op">{</span>
 
-        <span class="cm">// fetch hace la petición a la API</span>
-        <span class="kw">const</span> <span class="vr">respuesta</span> <span class="op">=</span> <span class="kw">await</span> <span class="fn">fetch</span><span class="op">(</span><span class="str">"https://restcountries.com/v3.1/all?fields=name,flags"</span><span class="op">);</span>
+        <span class="kw">let</span> <span class="vr">offset</span> <span class="op">=</span> <span class="nm">0</span><span class="op">;</span>
+        <span class="kw">let</span> <span class="vr">hayMas</span> <span class="op">=</span> <span class="kw">true</span><span class="op">;</span>
 
-        <span class="cm">// Convertimos la respuesta a JSON</span>
-        <span class="kw">const</span> <span class="vr">datos</span> <span class="op">=</span> <span class="kw">await</span> <span class="vr">respuesta</span><span class="op">.</span><span class="fn">json</span><span class="op">();</span>
+        <span class="cm">// La API devuelve los países de a páginas (máximo 100 por pedido)</span>
+        <span class="cm">// así que repetimos el fetch hasta traerlos todos</span>
+        <span class="kw">while</span> <span class="op">(</span><span class="vr">hayMas</span><span class="op">) {</span>
 
-        <span class="cm">// Guardamos los países en la variable global</span>
-        <span class="vr">paises</span> <span class="op">=</span> <span class="vr">datos</span><span class="op">;</span>
+            <span class="cm">// fetch hace la petición a la API, con la API key en el header</span>
+            <span class="kw">const</span> <span class="vr">respuesta</span> <span class="op">=</span> <span class="kw">await</span> <span class="fn">fetch</span><span class="op">(</span>
+                <span class="str">`https://api.restcountries.com/countries/v5?response_fields=names,flag&amp;limit=100&amp;offset=${</span><span class="vr">offset</span><span class="str">}`</span><span class="op">,</span>
+                <span class="op">{</span> <span class="pl">headers</span><span class="op">: {</span> <span class="str">"Authorization"</span><span class="op">:</span> <span class="str">`Bearer ${</span><span class="vr">API_KEY</span><span class="str">}`</span> <span class="op">} }</span>
+            <span class="op">);</span>
+
+            <span class="cm">// Convertimos la respuesta a JSON</span>
+            <span class="kw">const</span> <span class="vr">datos</span> <span class="op">=</span> <span class="kw">await</span> <span class="vr">respuesta</span><span class="op">.</span><span class="fn">json</span><span class="op">();</span>
+
+            <span class="cm">// Los países de esta página están en datos.data.objects</span>
+            <span class="vr">paises</span> <span class="op">=</span> <span class="vr">paises</span><span class="op">.</span><span class="fn">concat</span><span class="op">(</span><span class="vr">datos</span><span class="op">.</span><span class="vr">data</span><span class="op">.</span><span class="vr">objects</span><span class="op">);</span>
+
+            <span class="cm">// datos.data.meta.more indica si quedan más páginas</span>
+            <span class="vr">hayMas</span> <span class="op">=</span> <span class="vr">datos</span><span class="op">.</span><span class="vr">data</span><span class="op">.</span><span class="vr">meta</span><span class="op">.</span><span class="vr">more</span><span class="op">;</span>
+            <span class="vr">offset</span> <span class="op">+=</span> <span class="nm">100</span><span class="op">;</span>
+
+        <span class="op">}</span>
 
         <span class="vr">console</span><span class="op">.</span><span class="fn">log</span><span class="op">(</span><span class="str">"Países cargados:"</span><span class="op">,</span> <span class="vr">paises</span><span class="op">.</span><span class="vr">length</span><span class="op">);</span>
 
@@ -543,7 +572,13 @@
 <span class="op">}</span></div>
     </div>
 
-    <p>El <code style="color:var(--keyword)">try/catch</code> nos permite manejar errores de red o de la API sin romper la aplicación. Si algo falla, lo mostramos en consola.</p>
+    <p>El <code style="color:var(--keyword)">try/catch</code> nos permite manejar errores de red o de la API sin romper la aplicación. Si algo falla, lo mostramos en consola. Ojo con la <code style="color:var(--var)">API_KEY</code> hardcodeada: sirve para este tutorial, pero en un proyecto real conviene no subirla a un repositorio público.</p>
+
+    <h2 style="font-size:1.2rem; margin-top:30px;">Preloader: ahora tarda más</h2>
+    <p>Como <code style="color:var(--func)">cargarPaises()</code> hace varios pedidos en secuencia (uno por página) en vez de uno solo, la carga inicial tarda un poco más que con la v3.1. Conviene mostrar algún indicador de carga (un <code style="color:var(--keyword)">spinner</code>, por ejemplo) mientras el <code style="color:var(--keyword)">while</code> sigue trayendo páginas, y recién mostrar el juego cuando <code style="color:var(--var)">hayMas</code> es <code style="color:var(--string)">false</code>. <code style="color:var(--accent)">datos.data.meta.total</code> sirve para mostrar un progreso ("cargando 200 de 249").</p>
+
+    <h2 style="font-size:1.2rem; margin-top:30px;">Nombres en español</h2>
+    <p>El campo <code style="color:var(--accent)">names.translations</code> trae el nombre de cada país traducido a varios idiomas, incluido español bajo la clave <code style="color:var(--accent)">spa</code>. Como ya estamos pidiendo la rama completa de <code style="color:var(--accent)">names</code>, este campo viene incluido sin tener que cambiar el <code style="color:var(--accent)">response_fields</code>. Se accede así: <code style="color:var(--var)">pais.names.translations.spa.common</code>. No todos los países tienen traducción cargada, así que conviene un fallback a <code style="color:var(--var)">pais.names.common</code> cuando no exista.</p>
   </section>
 
   <!-- GENERAR OPCIONES -->
@@ -563,13 +598,13 @@
     <span class="kw">let</span> <span class="vr">opciones</span> <span class="op">= [];</span>
 
     <span class="cm">// Primero agregamos la respuesta correcta</span>
-    <span class="vr">opciones</span><span class="op">.</span><span class="fn">push</span><span class="op">(</span><span class="vr">paisCorrecto</span><span class="op">.</span><span class="vr">name</span><span class="op">.</span><span class="vr">common</span><span class="op">);</span>
+    <span class="vr">opciones</span><span class="op">.</span><span class="fn">push</span><span class="op">(</span><span class="vr">paisCorrecto</span><span class="op">.</span><span class="vr">names</span><span class="op">.</span><span class="vr">common</span><span class="op">);</span>
 
     <span class="cm">// Completamos con 3 países incorrectos al azar</span>
     <span class="kw">while</span> <span class="op">(</span><span class="vr">opciones</span><span class="op">.</span><span class="vr">length</span> <span class="op">&lt;</span> <span class="nm">4</span><span class="op">) {</span>
 
         <span class="kw">let</span> <span class="vr">random</span> <span class="op">=</span> <span class="vr">Math</span><span class="op">.</span><span class="fn">floor</span><span class="op">(</span><span class="vr">Math</span><span class="op">.</span><span class="fn">random</span><span class="op">() *</span> <span class="vr">paises</span><span class="op">.</span><span class="vr">length</span><span class="op">);</span>
-        <span class="kw">let</span> <span class="vr">nombrePais</span> <span class="op">=</span> <span class="vr">paises</span><span class="op">[</span><span class="vr">random</span><span class="op">].</span><span class="vr">name</span><span class="op">.</span><span class="vr">common</span><span class="op">;</span>
+        <span class="kw">let</span> <span class="vr">nombrePais</span> <span class="op">=</span> <span class="vr">paises</span><span class="op">[</span><span class="vr">random</span><span class="op">].</span><span class="vr">names</span><span class="op">.</span><span class="vr">common</span><span class="op">;</span>
 
         <span class="cm">// Evitar duplicados</span>
         <span class="kw">if</span> <span class="op">(!</span><span class="vr">opciones</span><span class="op">.</span><span class="fn">includes</span><span class="op">(</span><span class="vr">nombrePais</span><span class="op">)) {</span>
